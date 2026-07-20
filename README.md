@@ -1,4 +1,4 @@
-# AvastSvc v2.0
+# Telegram Screenshot Hotkey
 
 Клиент для отправки скриншотов через собственный relay-сервер в Telegram.
 

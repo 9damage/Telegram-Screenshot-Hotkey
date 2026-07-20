@@ -9,6 +9,7 @@ screenshot_queue/
 
 .env
 .env.*
+!.env.example
 config.json
 SECRETS.txt
 
