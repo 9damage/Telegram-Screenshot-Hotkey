@@ -1,0 +1,5 @@
+{
+  "server_url": "http://YOUR_VDS_IP/upload",
+  "relay_secret": "YOUR_RELAY_SECRET",
+  "hotkey_vk": 96
+}

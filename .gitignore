@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+*.log
+*.spec
+
+build/
+dist/
+screenshot_queue/
+
+.env
+.env.*
+config.json
+SECRETS.txt
+
+.DS_Store
+Thumbs.db
+
+# Local portable tooling
+.tools/

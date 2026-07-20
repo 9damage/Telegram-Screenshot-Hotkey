@@ -1,0 +1,4 @@
+mss==10.0.0
+pynput==1.8.1
+requests==2.32.4
+pyinstaller==6.14.2
