@@ -163,6 +163,7 @@ class ServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(application.stop_requested)
         self.assertTrue(application.stop_pending)
+        _send_message.assert_any_call("Команда остановки отправлена с сайта.")
         request_event_id = response.get_json()["client_event_id"]
 
         response = self.client.post(

@@ -1,6 +1,33 @@
 (() => {
     const duration = 10000;
     const scheduled = new WeakSet();
+    const positions = new WeakMap();
+    let animationFrame = 0;
+
+    function animateStack() {
+        animationFrame = 0;
+        document.querySelectorAll(".toast-container .flash").forEach((notification) => {
+            const nextTop = notification.getBoundingClientRect().top;
+            const previousTop = positions.get(notification);
+
+            if (previousTop !== undefined && previousTop !== nextTop) {
+                notification.animate(
+                    [
+                        { transform: `translateY(${previousTop - nextTop}px)` },
+                        { transform: "translateY(0)" },
+                    ],
+                    { duration: 280, easing: "cubic-bezier(.2,.8,.2,1)" },
+                );
+            }
+
+            positions.set(notification, nextTop);
+        });
+    }
+
+    function queueStackAnimation() {
+        if (animationFrame) return;
+        animationFrame = window.requestAnimationFrame(animateStack);
+    }
 
     function schedule(notification) {
         if (!notification.classList?.contains("flash") || scheduled.has(notification)) return;
@@ -27,7 +54,9 @@
     }
 
     document.querySelectorAll(".flash").forEach(schedule);
+    animateStack();
     new MutationObserver((mutations) => {
         mutations.forEach((mutation) => mutation.addedNodes.forEach(inspect));
+        queueStackAnimation();
     }).observe(document.body, { childList: true, subtree: true });
 })();

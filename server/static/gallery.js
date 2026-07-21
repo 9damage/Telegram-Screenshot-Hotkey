@@ -36,7 +36,7 @@
         notification.className = `flash flash-${category}`;
         notification.setAttribute("role", "status");
         notification.textContent = message;
-        liveNotifications.replaceChildren(notification);
+        liveNotifications.prepend(notification);
     }
 
     function handleClientEvent(event) {

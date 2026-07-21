@@ -44,12 +44,12 @@
         </section>
 
         <div class="toast-container" aria-live="polite" aria-atomic="true">
+            <div id="live-notifications"></div>
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% for category, message in messages %}
                     <div class="flash flash-{{ category }}" role="status">{{ message }}</div>
                 {% endfor %}
             {% endwith %}
-            <div id="live-notifications"></div>
         </div>
 
         <section class="stats-grid" aria-label="Статистика">

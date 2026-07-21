@@ -443,6 +443,7 @@ def stop_client():
         client_event_kind = "stop_requested"
         client_event_message = "Команда завершения отправлена на устройство."
         event_id = client_event_id
+    send_message("Команда остановки отправлена с сайта.")
     message = "Команда завершения отправлена на устройство."
     if request.accept_mimetypes.best == "application/json":
         return jsonify({"ok": True, "message": message, "client_event_id": event_id})
