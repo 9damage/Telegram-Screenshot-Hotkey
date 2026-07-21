@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Скриншоты — Shera2Tap</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+    <script src="{{ url_for('static', filename='gallery.js') }}" defer></script>
+</head>
+<body data-page="{{ page }}">
+    <header class="topbar">
+        <a class="brand" href="{{ url_for('gallery') }}" aria-label="Shera2Tap — главная">
+            <span class="brand-mark brand-mark-small" aria-hidden="true">S</span>
+            <span>Shera2Tap</span>
+        </a>
+        <div class="topbar-actions">
+            <span id="live-indicator" class="live-indicator" title="Галерея обновляется автоматически">
+                <span aria-hidden="true"></span> Автообновление
+            </span>
+            <form method="post" action="{{ url_for('logout') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="button button-quiet" type="submit">Выйти</button>
+            </form>
+        </div>
+    </header>
+
+    <main class="page-shell">
+        <section class="hero-row">
+            <div>
+                <p class="eyebrow">Защищённое хранилище</p>
+                <h1>Скриншоты</h1>
+                <p class="muted">Новые изображения появляются здесь автоматически.</p>
+            </div>
+            <button id="open-clear-dialog" class="button button-danger-outline" type="button" {% if not stats.count %}disabled{% endif %}>
+                Очистить всё
+            </button>
+        </section>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash flash-{{ category }}" role="status">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <section class="stats-grid" aria-label="Статистика">
+            <article class="stat-card">
+                <span>Всего снимков</span>
+                <strong id="total-count">{{ stats.count }}</strong>
+                <small><span id="unviewed-count">{{ stats.unviewed }}</span> новых</small>
+            </article>
+            <article class="stat-card">
+                <span>Занято места</span>
+                <strong id="storage-size">{{ human_size(stats.size_bytes) }}</strong>
+            </article>
+            <article class="stat-card">
+                <span>Клиент</span>
+                <strong id="client-status" class="status-{{ 'online' if client_active else 'offline' }}">
+                    {{ 'Активен' if client_active else 'Неактивен' }}
+                </strong>
+            </article>
+            <article class="stat-card">
+                <span>В очереди</span>
+                <strong id="queue-count">{{ queue_count }}</strong>
+            </article>
+        </section>
+
+        <form id="bulk-form" method="post" action="{{ url_for('delete_selected') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="gallery-toolbar">
+                <label class="select-all">
+                    <input id="select-all" type="checkbox">
+                    <span>Выбрать всё</span>
+                </label>
+                <button id="delete-selected" class="button button-danger" type="submit" disabled>
+                    Удалить выбранные <span id="selected-count"></span>
+                </button>
+            </div>
+
+            <div id="empty-state" class="empty-state" {% if screenshots %}hidden{% endif %}>
+                <div class="empty-icon" aria-hidden="true">▧</div>
+                <h2>Скриншотов пока нет</h2>
+                <p>Новый снимок появится здесь автоматически после нажатия горячей клавиши.</p>
+            </div>
+
+            <div id="gallery-grid" class="gallery-grid">
+                {% for screenshot in screenshots %}
+                    <article class="screenshot-card{% if not screenshot.viewed %} is-unviewed{% endif %}" data-screenshot-id="{{ screenshot.id }}">
+                        {% if not screenshot.viewed %}<span class="new-badge">Новый</span>{% endif %}
+                        <label class="card-select" aria-label="Выбрать скриншот">
+                            <input class="screenshot-checkbox" type="checkbox" name="selected" value="{{ screenshot.id }}">
+                        </label>
+                        <button class="image-button" type="button"
+                                data-view-image="{{ url_for('screenshot_image', screenshot_id=screenshot.id) }}"
+                                data-view-title="{{ format_timestamp(screenshot.created_at) }}"
+                                data-mark-viewed-url="{{ url_for('mark_screenshot_viewed', screenshot_id=screenshot.id) }}">
+                            <img src="{{ url_for('screenshot_image', screenshot_id=screenshot.id) }}"
+                                 alt="Скриншот от {{ format_timestamp(screenshot.created_at) }}"
+                                 loading="lazy">
+                        </button>
+                        <div class="card-meta">
+                            <div>
+                                <time datetime="{{ screenshot.created_at }}">{{ format_timestamp(screenshot.created_at) }}</time>
+                                <span>{{ human_size(screenshot.size_bytes) }}</span>
+                            </div>
+                            <button class="icon-button delete-one" type="button"
+                                    data-delete-url="{{ url_for('delete_screenshot', screenshot_id=screenshot.id) }}"
+                                    aria-label="Удалить скриншот" title="Удалить">×</button>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        </form>
+
+        {% if pages > 1 %}
+            <nav class="pagination" aria-label="Страницы галереи">
+                {% if page > 1 %}<a class="button button-quiet" href="{{ url_for('gallery', page=page-1) }}">Назад</a>{% endif %}
+                <span>Страница {{ page }} из {{ pages }}</span>
+                {% if page < pages %}<a class="button button-quiet" href="{{ url_for('gallery', page=page+1) }}">Далее</a>{% endif %}
+            </nav>
+        {% endif %}
+
+        <p class="retention-note">
+            {% if retention_days %}
+                Автоочистка: снимки старше {{ retention_days }} дн. удаляются автоматически.
+            {% else %}
+                Автоочистка по сроку отключена.
+            {% endif %}
+        </p>
+    </main>
+
+    <dialog id="viewer-dialog" class="viewer-dialog">
+        <div class="viewer-bar">
+            <span id="viewer-title"></span>
+            <button id="close-viewer" class="icon-button" type="button" aria-label="Закрыть">×</button>
+        </div>
+        <img id="viewer-image" alt="Просмотр скриншота">
+    </dialog>
+
+    <dialog id="clear-dialog" class="confirm-dialog">
+        <form method="post" action="{{ url_for('clear_screenshots') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <h2>Удалить все скриншоты?</h2>
+            <p>Это действие нельзя отменить. Для подтверждения введите <strong>УДАЛИТЬ ВСЕ</strong>.</p>
+            <label for="confirmation">Подтверждение</label>
+            <input id="confirmation" name="confirmation" autocomplete="off" required>
+            <div class="dialog-actions">
+                <button id="cancel-clear" class="button button-quiet" type="button">Отмена</button>
+                <button class="button button-danger" type="submit">Удалить всё</button>
+            </div>
+        </form>
+    </dialog>
+</body>
+</html>

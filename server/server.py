@@ -1,79 +1,159 @@
 import hmac
+import math
 import os
+import secrets
 import threading
 import time
+from datetime import datetime, timezone
+from functools import wraps
+from pathlib import Path
 
 import requests
-from flask import Flask, jsonify, request
+from flask import (
+    Flask,
+    abort,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    session,
+    url_for,
+)
+from werkzeug.security import check_password_hash
 
-app = Flask(__name__)
+from storage import ScreenshotStore
+
+
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = Path(os.environ.get("DATA_DIR", BASE_DIR / "data"))
+SCREENSHOT_DIR = Path(
+    os.environ.get("SCREENSHOT_DIR", DATA_DIR / "screenshots")
+)
+DATABASE_PATH = Path(
+    os.environ.get("DATABASE_PATH", DATA_DIR / "screenshots.db")
+)
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "").strip()
 CHAT_ID = os.environ.get("CHAT_ID", "").strip()
 RELAY_SECRET = os.environ.get("RELAY_SECRET", "").strip()
+ADMIN_PASSWORD_HASH = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
+FLASK_SECRET_KEY = os.environ.get("FLASK_SECRET_KEY", "").strip()
+RETENTION_DAYS = max(int(os.environ.get("SCREENSHOT_RETENTION_DAYS", "0")), 0)
 
+app = Flask(__name__)
+app.config.update(
+    MAX_CONTENT_LENGTH=20 * 1024 * 1024,
+    SECRET_KEY=FLASK_SECRET_KEY or secrets.token_hex(32),
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.environ.get("COOKIE_SECURE", "0") == "1",
+    PERMANENT_SESSION_LIFETIME=12 * 60 * 60,
+)
+
+store = ScreenshotStore(DATABASE_PATH, SCREENSHOT_DIR)
 state_lock = threading.Lock()
+login_lock = threading.Lock()
 
 last_seen = 0.0
 last_queue_count = 0
 stop_requested = False
 last_update_id = 0
+login_attempts = {}
 
 
-def authorized():
-    supplied_secret = request.headers.get(
-        "X-Relay-Secret",
-        ""
-    )
-
-    return (
-        bool(RELAY_SECRET)
-        and hmac.compare_digest(
-            supplied_secret,
-            RELAY_SECRET
-        )
+def relay_authorized():
+    supplied_secret = request.headers.get("X-Relay-Secret", "")
+    return bool(RELAY_SECRET) and hmac.compare_digest(
+        supplied_secret,
+        RELAY_SECRET,
     )
 
 
-def send_message(text):
-    try:
-        response = requests.post(
-            f"https://api.telegram.org/"
-            f"bot{BOT_TOKEN}/sendMessage",
-            data={
-                "chat_id": CHAT_ID,
-                "text": text
-            },
-            timeout=60
-        )
+def admin_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not session.get("admin_authenticated"):
+            return redirect(url_for("login", next=request.full_path))
+        return view(*args, **kwargs)
 
-        return response.ok
+    return wrapped
 
-    except requests.RequestException:
-        return False
+
+def csrf_token():
+    token = session.get("csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["csrf_token"] = token
+    return token
+
+
+def require_csrf():
+    supplied = request.form.get("csrf_token") or request.headers.get("X-CSRF-Token")
+    expected = session.get("csrf_token", "")
+    if not supplied or not expected or not hmac.compare_digest(supplied, expected):
+        abort(400, description="Некорректный CSRF-токен")
 
 
 def client_is_active():
     with state_lock:
         seen = last_seen
+    return seen > 0 and (time.time() - seen) <= 15
 
-    return (
-        seen > 0
-        and (time.time() - seen) <= 15
+
+def human_size(size_bytes):
+    size = float(size_bytes or 0)
+    for unit in ("Б", "КБ", "МБ", "ГБ"):
+        if size < 1024 or unit == "ГБ":
+            return f"{size:.0f} {unit}" if unit == "Б" else f"{size:.1f} {unit}"
+        size /= 1024
+
+
+def format_timestamp(timestamp):
+    if not timestamp:
+        return "—"
+    return datetime.fromtimestamp(timestamp, timezone.utc).strftime("%d.%m.%Y %H:%M UTC")
+
+
+app.jinja_env.globals.update(
+    csrf_token=csrf_token,
+    human_size=human_size,
+    format_timestamp=format_timestamp,
+)
+
+
+@app.after_request
+def security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; img-src 'self' data:; "
+        "style-src 'self'; script-src 'self'; base-uri 'none'; frame-ancestors 'none'"
     )
+    if session.get("admin_authenticated"):
+        response.headers["Cache-Control"] = "private, no-store"
+    return response
+
+
+def send_message(text):
+    try:
+        response = requests.post(
+            f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+            data={"chat_id": CHAT_ID, "text": text},
+            timeout=60,
+        )
+        return response.ok
+    except requests.RequestException:
+        return False
 
 
 def normalize_command(text):
     if not text.strip():
         return ""
-
-    first_part = text.strip().split()[0]
-
-    return (
-        first_part
-        .split("@")[0]
-        .lower()
-    )
+    return text.strip().split()[0].split("@")[0].lower()
 
 
 def command_worker():
@@ -83,95 +163,219 @@ def command_worker():
     while True:
         try:
             response = requests.get(
-                f"https://api.telegram.org/"
-                f"bot{BOT_TOKEN}/getUpdates",
+                f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates",
                 params={
                     "offset": last_update_id + 1,
                     "timeout": 50,
-                    "allowed_updates": '["message"]'
+                    "allowed_updates": '["message"]',
                 },
-                timeout=65
+                timeout=65,
             )
-
             data = response.json()
-
             if not data.get("ok"):
                 time.sleep(3)
                 continue
 
             for update in data.get("result", []):
-                update_id = int(
-                    update.get(
-                        "update_id",
-                        0
-                    )
-                )
-
-                last_update_id = max(
-                    last_update_id,
-                    update_id
-                )
-
-                message = (
-                    update.get("message")
-                    or {}
-                )
-
-                chat = (
-                    message.get("chat")
-                    or {}
-                )
-
-                text = str(
-                    message.get(
-                        "text",
-                        ""
-                    )
-                ).strip()
-
-                if str(
-                    chat.get("id")
-                ) != CHAT_ID:
+                last_update_id = max(last_update_id, int(update.get("update_id", 0)))
+                message = update.get("message") or {}
+                chat = message.get("chat") or {}
+                if str(chat.get("id")) != CHAT_ID:
                     continue
 
-                command = normalize_command(text)
-
+                command = normalize_command(str(message.get("text", "")))
                 if command == "/queue":
                     with state_lock:
                         count = last_queue_count
-
                     if client_is_active():
                         send_message(
                             "Программа активна.\n"
-                            f"В очереди {count} скриншотов."
+                            f"В очереди {count} скриншотов.\n"
+                            f"В веб-архиве {store.stats()['count']} скриншотов."
                         )
                     else:
-                        send_message(
-                            "Программа неактивна."
-                        )
-
+                        send_message("Программа неактивна.")
                 elif command == "/stop":
                     if client_is_active():
                         with state_lock:
                             stop_requested = True
-
-                        send_message(
-                            "Команда остановки отправлена."
-                        )
+                        send_message("Команда остановки отправлена.")
                     else:
-                        send_message(
-                            "Программа неактивна."
-                        )
-
+                        send_message("Программа неактивна.")
         except Exception:
             time.sleep(3)
 
 
+def cleanup_worker():
+    while True:
+        if RETENTION_DAYS > 0:
+            cutoff = time.time() - RETENTION_DAYS * 86400
+            store.delete_older_than(cutoff)
+        time.sleep(3600)
+
+
 @app.get("/health")
 def health():
-    return jsonify({
-        "ok": True
-    })
+    return jsonify({"ok": True})
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if session.get("admin_authenticated"):
+        return redirect(url_for("gallery"))
+
+    if request.method == "POST":
+        require_csrf()
+        if not ADMIN_PASSWORD_HASH:
+            return render_template("login.html", configuration_missing=True), 503
+
+        remote = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown")
+        remote = remote.split(",", 1)[0].strip()
+        now = time.time()
+
+        with login_lock:
+            attempts = [item for item in login_attempts.get(remote, []) if now - item < 900]
+            login_attempts[remote] = attempts
+            blocked = len(attempts) >= 8
+
+        if blocked:
+            flash("Слишком много попыток. Повторите через 15 минут.", "error")
+            return render_template("login.html"), 429
+
+        if check_password_hash(ADMIN_PASSWORD_HASH, request.form.get("password", "")):
+            with login_lock:
+                login_attempts.pop(remote, None)
+            session.clear()
+            session.permanent = True
+            session["admin_authenticated"] = True
+            session["csrf_token"] = secrets.token_urlsafe(32)
+            return redirect(url_for("gallery"))
+
+        with login_lock:
+            login_attempts.setdefault(remote, []).append(now)
+        flash("Неверный пароль.", "error")
+
+    return render_template("login.html", configuration_missing=not ADMIN_PASSWORD_HASH)
+
+
+@app.post("/logout")
+@admin_required
+def logout():
+    require_csrf()
+    session.clear()
+    return redirect(url_for("login"))
+
+
+@app.get("/")
+@admin_required
+def gallery():
+    page = max(request.args.get("page", 1, type=int), 1)
+    per_page = 24
+    screenshots, total = store.list(page=page, per_page=per_page)
+    pages = max(math.ceil(total / per_page), 1)
+    if page > pages and total:
+        return redirect(url_for("gallery", page=pages))
+
+    with state_lock:
+        queue_count = last_queue_count
+        seen = last_seen
+
+    return render_template(
+        "gallery.html",
+        screenshots=screenshots,
+        stats=store.stats(),
+        page=page,
+        pages=pages,
+        client_active=client_is_active(),
+        queue_count=queue_count,
+        last_seen=seen,
+        retention_days=RETENTION_DAYS,
+    )
+
+
+@app.get("/screenshots/<screenshot_id>/image")
+@admin_required
+def screenshot_image(screenshot_id):
+    record = store.get(screenshot_id)
+    if not record:
+        abort(404)
+    return send_from_directory(
+        store.screenshot_dir,
+        record["filename"],
+        mimetype=record["content_type"],
+        max_age=0,
+    )
+
+
+@app.get("/api/gallery-state")
+@admin_required
+def gallery_state():
+    screenshots, total = store.list(page=1, per_page=24)
+    statistics = store.stats()
+    return jsonify(
+        {
+            "screenshots": [
+                {
+                    "id": item["id"],
+                    "created_at": item["created_at"],
+                    "created_label": format_timestamp(item["created_at"]),
+                    "size_label": human_size(item["size_bytes"]),
+                    "image_url": url_for("screenshot_image", screenshot_id=item["id"]),
+                    "delete_url": url_for("delete_screenshot", screenshot_id=item["id"]),
+                    "mark_viewed_url": url_for("mark_screenshot_viewed", screenshot_id=item["id"]),
+                    "viewed": bool(item["viewed"]),
+                }
+                for item in screenshots
+            ],
+            "total": total,
+            "size_label": human_size(statistics["size_bytes"]),
+            "unviewed": statistics["unviewed"],
+            "client_active": client_is_active(),
+            "queue_count": last_queue_count,
+        }
+    )
+
+
+@app.post("/screenshots/<screenshot_id>/viewed")
+@admin_required
+def mark_screenshot_viewed(screenshot_id):
+    require_csrf()
+    if not store.mark_viewed(screenshot_id):
+        return jsonify({"ok": False, "error": "not_found"}), 404
+    return jsonify({"ok": True})
+
+
+@app.post("/screenshots/<screenshot_id>/delete")
+@admin_required
+def delete_screenshot(screenshot_id):
+    require_csrf()
+    if store.delete(screenshot_id):
+        flash("Скриншот удалён.", "success")
+    else:
+        flash("Скриншот уже отсутствует.", "error")
+    return redirect(request.form.get("return_to") or url_for("gallery"))
+
+
+@app.post("/screenshots/delete-selected")
+@admin_required
+def delete_selected():
+    require_csrf()
+    selected = request.form.getlist("selected")
+    deleted = store.delete_many(selected)
+    flash(f"Удалено скриншотов: {deleted}.", "success")
+    return redirect(url_for("gallery"))
+
+
+@app.post("/screenshots/clear")
+@admin_required
+def clear_screenshots():
+    require_csrf()
+    if request.form.get("confirmation") != "УДАЛИТЬ ВСЕ":
+        flash("Очистка отменена: подтверждение не совпало.", "error")
+        return redirect(url_for("gallery"))
+    deleted = store.clear()
+    flash(f"Архив очищен. Удалено скриншотов: {deleted}.", "success")
+    return redirect(url_for("gallery"))
 
 
 @app.post("/startup")
@@ -179,39 +383,16 @@ def startup():
     global last_seen
     global last_queue_count
     global stop_requested
+    if not relay_authorized():
+        return jsonify({"ok": False, "error": "unauthorized"}), 401
 
-    if not authorized():
-        return jsonify({
-            "ok": False,
-            "error": "unauthorized"
-        }), 401
-
-    payload = (
-        request.get_json(
-            silent=True
-        )
-        or {}
-    )
-
+    payload = request.get_json(silent=True) or {}
     with state_lock:
         last_seen = time.time()
-
-        last_queue_count = int(
-            payload.get(
-                "queue_count",
-                0
-            )
-        )
-
+        last_queue_count = int(payload.get("queue_count", 0))
         stop_requested = False
-
-    send_message(
-        "Запуск успешен."
-    )
-
-    return jsonify({
-        "ok": True
-    })
+    send_message("Запуск успешен.")
+    return jsonify({"ok": True})
 
 
 @app.post("/heartbeat")
@@ -219,138 +400,90 @@ def heartbeat():
     global last_seen
     global last_queue_count
     global stop_requested
+    if not relay_authorized():
+        return jsonify({"ok": False, "error": "unauthorized"}), 401
 
-    if not authorized():
-        return jsonify({
-            "ok": False,
-            "error": "unauthorized"
-        }), 401
-
-    payload = (
-        request.get_json(
-            silent=True
-        )
-        or {}
-    )
-
+    payload = request.get_json(silent=True) or {}
     with state_lock:
         last_seen = time.time()
-
-        last_queue_count = int(
-            payload.get(
-                "queue_count",
-                0
-            )
-        )
-
-        if stop_requested:
-            command = "stop"
-            stop_requested = False
-        else:
-            command = None
-
-    return jsonify({
-        "ok": True,
-        "command": command
-    })
+        last_queue_count = int(payload.get("queue_count", 0))
+        command = "stop" if stop_requested else None
+        stop_requested = False
+    return jsonify({"ok": True, "command": command})
 
 
 @app.post("/stopped")
 def stopped():
     global last_seen
     global last_queue_count
-
-    if not authorized():
-        return jsonify({
-            "ok": False,
-            "error": "unauthorized"
-        }), 401
+    if not relay_authorized():
+        return jsonify({"ok": False, "error": "unauthorized"}), 401
 
     with state_lock:
         last_seen = 0.0
         last_queue_count = 0
-
-    send_message(
-        "Программа успешно завершила работу."
-    )
-
-    return jsonify({
-        "ok": True
-    })
+    send_message("Программа успешно завершила работу.")
+    return jsonify({"ok": True})
 
 
 @app.post("/upload")
 def upload():
-    if not authorized():
-        return jsonify({
-            "ok": False,
-            "error": "unauthorized"
-        }), 401
+    if not relay_authorized():
+        return jsonify({"ok": False, "error": "unauthorized"}), 401
 
-    image = request.files.get(
-        "image"
-    )
-
+    image = request.files.get("image")
     if image is None:
-        return jsonify({
-            "ok": False,
-            "error": "image_missing"
-        }), 400
+        return jsonify({"ok": False, "error": "image_missing"}), 400
 
     image_data = image.read()
-
     if not image_data:
-        return jsonify({
-            "ok": False,
-            "error": "empty_image"
-        }), 400
+        return jsonify({"ok": False, "error": "empty_image"}), 400
+
+    try:
+        record, created = store.save(
+            image_data,
+            upload_id=request.headers.get("X-Upload-ID", "")[:200],
+        )
+    except ValueError:
+        return jsonify({"ok": False, "error": "unsupported_image"}), 415
+    except OSError as error:
+        return jsonify({"ok": False, "error": "storage_error", "details": str(error)}), 507
 
     try:
         response = requests.post(
-            f"https://api.telegram.org/"
-            f"bot{BOT_TOKEN}/sendPhoto",
-            data={
-                "chat_id": CHAT_ID
-            },
-            files={
-                "photo": (
-                    "screenshot.png",
-                    image_data,
-                    "image/png"
-                )
-            },
-            timeout=60
+            f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto",
+            data={"chat_id": CHAT_ID},
+            files={"photo": (record["filename"], image_data, record["content_type"])},
+            timeout=60,
         )
-
         try:
             payload = response.json()
-
         except ValueError:
             payload = {
                 "ok": False,
                 "error": "telegram_non_json",
-                "telegram_status":
-                    response.status_code,
-                "telegram_response":
-                    response.text[:1000]
+                "telegram_status": response.status_code,
             }
-
-        return (
-            jsonify(payload),
-            response.status_code
-        )
-
+        payload["screenshot_id"] = record["id"]
+        payload["stored"] = True
+        payload["new_screenshot"] = created
+        return jsonify(payload), response.status_code
     except requests.RequestException as error:
-        return jsonify({
-            "ok": False,
-            "error":
-                type(error).__name__,
-            "details":
-                str(error)
-        }), 502
+        return jsonify(
+            {
+                "ok": False,
+                "error": type(error).__name__,
+                "details": str(error),
+                "screenshot_id": record["id"],
+                "stored": True,
+            }
+        ), 502
 
 
-threading.Thread(
-    target=command_worker,
-    daemon=True
-).start()
+if os.environ.get("DISABLE_BACKGROUND_WORKERS") != "1":
+    threading.Thread(target=command_worker, daemon=True).start()
+    threading.Thread(target=cleanup_worker, daemon=True).start()
+
+
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=8000)

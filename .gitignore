@@ -6,6 +6,10 @@ __pycache__/
 build/
 dist/
 screenshot_queue/
+server/data/
+*.db
+*.db-shm
+*.db-wal
 
 .env
 .env.*

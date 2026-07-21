@@ -299,6 +299,14 @@ def make_screenshot():
 def send_file(path):
     config = load_config()
 
+    request_headers = headers(
+        config
+    )
+
+    request_headers[
+        "X-Upload-ID"
+    ] = path.name
+
     size_mb = (
         path.stat().st_size
         / 1024
@@ -324,9 +332,7 @@ def send_file(path):
                 "server_url"
             ],
 
-            headers=headers(
-                config
-            ),
+            headers=request_headers,
 
             files={
                 "image": (
