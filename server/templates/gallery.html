@@ -10,7 +10,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
     <script src="{{ url_for('static', filename='gallery.js') }}" defer></script>
 </head>
-<body class="gallery-page" data-page="{{ page }}" data-client-event-id="{{ client_event_id }}">
+<body class="gallery-page" data-page="{{ page }}" data-client-event-id="{{ client_event_id }}"
+      data-close-icon-url="{{ url_for('static', filename='close-icon.svg') }}">
     <header class="topbar">
         <a class="brand" href="{{ url_for('gallery') }}" aria-label="Shera2Tap — главная">
             <span class="brand-mark brand-mark-small brand-mark-logo" aria-hidden="true">
@@ -135,7 +136,7 @@
                             <button class="icon-button delete-one" type="button"
                                     data-delete-url="{{ url_for('delete_screenshot', screenshot_id=screenshot.id) }}"
                                     aria-label="Удалить скриншот" title="Удалить">
-                                <span aria-hidden="true"></span>
+                                <img class="close-icon" src="{{ url_for('static', filename='close-icon.svg') }}" alt="" aria-hidden="true">
                             </button>
                         </div>
                     </article>
@@ -164,7 +165,7 @@
         <div class="viewer-bar">
             <span id="viewer-title"></span>
             <button id="close-viewer" class="icon-button viewer-close" type="button" aria-label="Закрыть">
-                <span aria-hidden="true"></span>
+                <img class="close-icon" src="{{ url_for('static', filename='close-icon.svg') }}" alt="" aria-hidden="true">
             </button>
         </div>
         <img id="viewer-image" alt="Просмотр скриншота">

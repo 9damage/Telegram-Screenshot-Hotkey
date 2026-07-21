@@ -199,20 +199,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent);
 .card-meta span { margin-top: 3px; color: var(--muted); font-size: 12px; }
 .icon-button { width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; color: var(--text); background: transparent; }
 .delete-one { display: grid; place-items: center; padding: 0; }
-.delete-one > span { position: relative; display: block; width: 18px; height: 18px; }
-.delete-one > span::before,
-.delete-one > span::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 16px;
-    height: 2px;
-    border-radius: 2px;
-    background: currentColor;
-}
-.delete-one > span::before { transform: translate(-50%, -50%) rotate(45deg); }
-.delete-one > span::after { transform: translate(-50%, -50%) rotate(-45deg); }
+.close-icon { display: block; width: 18px; height: 18px; pointer-events: none; }
 .delete-one:hover { border-color: var(--danger); color: var(--danger); background: rgba(255,92,112,.08); }
 
 .empty-state { padding: 80px 24px; border: 1px dashed var(--line); border-radius: var(--radius); text-align: center; color: var(--muted); }
@@ -232,20 +219,6 @@ dialog::backdrop { background: rgba(0,0,0,.82); backdrop-filter: blur(8px); }
 .viewer-dialog img { display: block; max-width: 100%; max-height: calc(94vh - 58px); margin: auto; object-fit: contain; }
 .viewer-bar { display: flex; align-items: center; justify-content: space-between; min-height: 58px; padding: 8px 10px 8px 18px; border-bottom: 1px solid var(--line); color: var(--muted); }
 .viewer-close { display: grid; place-items: center; padding: 0; }
-.viewer-close > span { position: relative; display: block; width: 18px; height: 18px; }
-.viewer-close > span::before,
-.viewer-close > span::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 17px;
-    height: 2px;
-    border-radius: 2px;
-    background: currentColor;
-}
-.viewer-close > span::before { transform: translate(-50%, -50%) rotate(45deg); }
-.viewer-close > span::after { transform: translate(-50%, -50%) rotate(-45deg); }
 .confirm-dialog { width: min(92vw, 480px); padding: 26px; border-radius: 20px; }
 .confirm-dialog h2 { margin-top: 0; }
 .confirm-dialog label, .login-form label { display: block; margin: 20px 0 8px; font-size: 13px; font-weight: 700; }

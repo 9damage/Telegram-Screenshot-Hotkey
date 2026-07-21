@@ -15,6 +15,7 @@
     const stopClientForm = document.querySelector("#stop-client-form");
     const liveNotifications = document.querySelector("#live-notifications");
     const currentPage = Number(document.body.dataset.page || "1");
+    const closeIconUrl = document.body.dataset.closeIconUrl || "/static/close-icon.svg";
     let lastClientEventId = Number(document.body.dataset.clientEventId || "0");
     let notificationTimer = null;
 
@@ -151,7 +152,10 @@
         remove.dataset.deleteUrl = item.delete_url;
         remove.setAttribute("aria-label", "Удалить скриншот");
         remove.title = "Удалить";
-        const removeIcon = document.createElement("span");
+        const removeIcon = document.createElement("img");
+        removeIcon.className = "close-icon";
+        removeIcon.src = closeIconUrl;
+        removeIcon.alt = "";
         removeIcon.setAttribute("aria-hidden", "true");
         remove.append(removeIcon);
         meta.append(details, remove);
