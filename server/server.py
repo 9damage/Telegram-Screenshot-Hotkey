@@ -303,6 +303,7 @@ def gallery():
     page = max(request.args.get("page", 1, type=int), 1)
     per_page = 24
     screenshots, total = store.list(page=page, per_page=per_page)
+    statistics = store.stats()
     pages = max(math.ceil(total / per_page), 1)
     if page > pages and total:
         return redirect(url_for("gallery", page=pages))
@@ -315,14 +316,16 @@ def gallery():
     return render_template(
         "gallery.html",
         screenshots=screenshots,
-        stats=store.stats(),
+        stats=statistics,
         page=page,
         pages=pages,
         client_active=client_is_active(),
         queue_count=queue_count,
         last_seen=seen,
         client_event_id=event_id,
-        disk_free_label=human_size(free_disk_space()),
+        screenshot_capacity_label=human_size(
+            free_disk_space() + statistics["size_bytes"]
+        ),
         retention_days=current_retention_days(),
         retention_choices=RETENTION_CHOICES,
     )
@@ -373,7 +376,9 @@ def gallery_state():
             ],
             "total": total,
             "size_label": human_size(statistics["size_bytes"]),
-            "disk_free_label": human_size(free_disk_space()),
+            "screenshot_capacity_label": human_size(
+                free_disk_space() + statistics["size_bytes"]
+            ),
             "unviewed": statistics["unviewed"],
             "client_active": active,
             "queue_count": queue_count,

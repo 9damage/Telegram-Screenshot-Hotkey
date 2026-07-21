@@ -101,7 +101,7 @@ class ServerTestCase(unittest.TestCase):
         state = self.client.get("/api/gallery-state").get_json()
         self.assertEqual(state["total"], 1)
         self.assertEqual(state["unviewed"], 1)
-        self.assertTrue(state["disk_free_label"])
+        self.assertTrue(state["screenshot_capacity_label"])
         self.assertFalse(state["screenshots"][0]["viewed"])
 
         viewed = self.client.post(
