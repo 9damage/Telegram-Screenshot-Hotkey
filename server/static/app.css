@@ -342,7 +342,9 @@ dialog::backdrop { background: rgba(0,0,0,.82); backdrop-filter: blur(8px); }
     .retention-form label { margin: 0; }
     .retention-form .button { width: 100%; }
     .stat-card { padding: 15px; }
-    .stat-card strong { font-size: 19px; }
+    .stat-card strong,
+    .stat-values .new-count,
+    .stat-values .storage-capacity { font-size: 19px; }
     .login-card { padding: 26px; }
     .login-card h1 { font-size: clamp(30px, 9vw, 40px); }
 }
