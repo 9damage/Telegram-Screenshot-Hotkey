@@ -256,5 +256,5 @@
 
     updateSelection();
     updateEmptyState();
-    window.setInterval(() => { if (!document.hidden) refreshGallery(); }, 4000);
+    window.setInterval(() => { if (!document.hidden) refreshGallery(); }, 2000);
 })();
