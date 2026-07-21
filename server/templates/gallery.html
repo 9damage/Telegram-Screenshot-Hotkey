@@ -78,7 +78,7 @@
                 <select id="retention-days" name="retention_days">
                     {% for days in retention_choices %}
                         <option value="{{ days }}" {% if days == retention_days %}selected{% endif %}>
-                            {% if days == 0 %}Отключена{% elif days == 1 %}Через 1 день{% elif days in (3, 7) %}Через {{ days }} дня{% else %}Через {{ days }} дней{% endif %}
+                            {% if days == 0 %}Отключена{% elif days == 1 %}Через 1 день{% elif days == 3 %}Через 3 дня{% else %}Через {{ days }} дней{% endif %}
                         </option>
                     {% endfor %}
                 </select>
