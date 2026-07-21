@@ -269,12 +269,12 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent);
 .flash-success .toast-timer-progress { stroke: var(--success); }
 .flash-error .toast-timer-progress { stroke: var(--danger); }
 @keyframes toast-enter {
-    from { opacity: 0; transform: translateY(-18px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateX(28px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 @keyframes toast-leave {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(-12px); }
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(28px); }
 }
 @keyframes toast-countdown {
     from { stroke-dashoffset: 0; }
