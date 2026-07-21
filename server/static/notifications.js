@@ -4,13 +4,25 @@
     const positions = new WeakMap();
     let animationFrame = 0;
 
+    function layoutTop(notification) {
+        const renderedTop = notification.getBoundingClientRect().top;
+        const transform = window.getComputedStyle(notification).transform;
+        if (!transform || transform === "none") return renderedTop;
+
+        try {
+            return renderedTop - new DOMMatrixReadOnly(transform).m42;
+        } catch (_error) {
+            return renderedTop;
+        }
+    }
+
     function animateStack() {
         animationFrame = 0;
         document.querySelectorAll(".toast-container .flash").forEach((notification) => {
-            const nextTop = notification.getBoundingClientRect().top;
+            const nextTop = layoutTop(notification);
             const previousTop = positions.get(notification);
 
-            if (previousTop !== undefined && previousTop !== nextTop) {
+            if (previousTop !== undefined && Math.abs(previousTop - nextTop) > 0.5) {
                 notification.animate(
                     [
                         { transform: `translateY(${previousTop - nextTop}px)` },
@@ -55,8 +67,10 @@
 
     document.querySelectorAll(".flash").forEach(schedule);
     animateStack();
-    new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => mutation.addedNodes.forEach(inspect));
-        queueStackAnimation();
-    }).observe(document.body, { childList: true, subtree: true });
+    document.querySelectorAll(".toast-container").forEach((container) => {
+        new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => mutation.addedNodes.forEach(inspect));
+            queueStackAnimation();
+        }).observe(container, { childList: true, subtree: true });
+    });
 })();
