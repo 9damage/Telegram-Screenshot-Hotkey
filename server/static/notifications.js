@@ -1,5 +1,6 @@
 (() => {
     const duration = 10000;
+    const exitDuration = 400;
     const scheduled = new WeakSet();
     const positions = new WeakMap();
     let animationFrame = 0;
@@ -55,7 +56,7 @@
             </svg>`;
         notification.append(timer);
 
-        window.setTimeout(() => notification.classList.add("is-leaving"), duration - 300);
+        window.setTimeout(() => notification.classList.add("is-leaving"), duration - exitDuration);
         window.setTimeout(() => notification.remove(), duration);
     }
 
