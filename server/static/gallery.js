@@ -21,6 +21,7 @@
     const currentPage = Number(document.body.dataset.page || "1");
     const closeIconUrl = document.body.dataset.closeIconUrl || "/static/close-icon.svg";
     let lastClientEventId = Number(document.body.dataset.clientEventId || "0");
+    let clientWasActive = document.querySelector("#client-status")?.classList.contains("status-online") || false;
     let confirmationResolver = null;
 
     function closeActionDialog(confirmed) {
@@ -217,9 +218,12 @@
             updateUnviewedCount(state.unviewed);
             document.querySelector("#queue-count").textContent = state.queue_count;
             const clientStatus = document.querySelector("#client-status");
-            clientStatus.textContent = state.client_active ? "Активен" : "Неактивен";
-            clientStatus.className = state.client_active ? "status-online" : "status-offline";
-            if (stopClient) stopClient.disabled = !state.client_active || state.stop_pending;
+            const clientIsActive = Boolean(state.client_active);
+            if (clientIsActive && !clientWasActive) showNotification("Клиент активен.");
+            clientWasActive = clientIsActive;
+            clientStatus.textContent = clientIsActive ? "Активен" : "Неактивен";
+            clientStatus.className = clientIsActive ? "status-online" : "status-offline";
+            if (stopClient) stopClient.disabled = !clientIsActive || state.stop_pending;
             handleClientEvent(state.client_event);
 
             if (currentPage === 1) {
