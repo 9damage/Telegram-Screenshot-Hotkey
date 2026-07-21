@@ -197,7 +197,22 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent);
 .card-meta time, .card-meta span { display: block; }
 .card-meta time { font-size: 13px; font-weight: 700; }
 .card-meta span { margin-top: 3px; color: var(--muted); font-size: 12px; }
-.icon-button { width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; color: var(--text); background: transparent; font-size: 23px; line-height: 1; }
+.icon-button { width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; color: var(--text); background: transparent; }
+.delete-one { display: grid; place-items: center; padding: 0; }
+.delete-one > span { position: relative; display: block; width: 18px; height: 18px; }
+.delete-one > span::before,
+.delete-one > span::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 16px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+}
+.delete-one > span::before { transform: translate(-50%, -50%) rotate(45deg); }
+.delete-one > span::after { transform: translate(-50%, -50%) rotate(-45deg); }
 .delete-one:hover { border-color: var(--danger); color: var(--danger); background: rgba(255,92,112,.08); }
 
 .empty-state { padding: 80px 24px; border: 1px dashed var(--line); border-radius: var(--radius); text-align: center; color: var(--muted); }

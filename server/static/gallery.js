@@ -16,6 +16,7 @@
     const liveNotifications = document.querySelector("#live-notifications");
     const currentPage = Number(document.body.dataset.page || "1");
     let lastClientEventId = Number(document.body.dataset.clientEventId || "0");
+    let notificationTimer = null;
 
     function showNotification(message, category = "success") {
         if (!message || !liveNotifications) return;
@@ -24,6 +25,11 @@
         notification.setAttribute("role", "status");
         notification.textContent = message;
         liveNotifications.replaceChildren(notification);
+        window.clearTimeout(notificationTimer);
+        notificationTimer = window.setTimeout(() => {
+            notification.remove();
+            notificationTimer = null;
+        }, 10000);
     }
 
     function handleClientEvent(event) {
@@ -145,7 +151,9 @@
         remove.dataset.deleteUrl = item.delete_url;
         remove.setAttribute("aria-label", "Удалить скриншот");
         remove.title = "Удалить";
-        remove.textContent = "×";
+        const removeIcon = document.createElement("span");
+        removeIcon.setAttribute("aria-hidden", "true");
+        remove.append(removeIcon);
         meta.append(details, remove);
 
         card.append(selectLabel, imageButton, meta);

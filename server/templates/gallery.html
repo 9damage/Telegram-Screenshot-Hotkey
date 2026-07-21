@@ -134,7 +134,9 @@
                             </div>
                             <button class="icon-button delete-one" type="button"
                                     data-delete-url="{{ url_for('delete_screenshot', screenshot_id=screenshot.id) }}"
-                                    aria-label="Удалить скриншот" title="Удалить">×</button>
+                                    aria-label="Удалить скриншот" title="Удалить">
+                                <span aria-hidden="true"></span>
+                            </button>
                         </div>
                     </article>
                 {% endfor %}
