@@ -1,6 +1,25 @@
 server {
     listen 80;
-    server_name NEW_VDS_IP;
+    server_name api.shera2tap.ru;
+
+    client_max_body_size 20M;
+
+    location ~ ^/(upload|startup|heartbeat|stopped|health)$ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        return 404;
+    }
+}
+
+server {
+    listen 80;
+    server_name shera2tap.ru www.shera2tap.ru;
 
     client_max_body_size 20M;
 
@@ -9,5 +28,6 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }

@@ -3,6 +3,7 @@ import os
 import sqlite3
 import time
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 
 
@@ -14,6 +15,7 @@ class ScreenshotStore:
         self.screenshot_dir.mkdir(parents=True, exist_ok=True)
         self._initialize()
 
+    @contextmanager
     def _connect(self):
         connection = sqlite3.connect(
             self.database_path,
@@ -22,7 +24,14 @@ class ScreenshotStore:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
         connection.execute("PRAGMA journal_mode = WAL")
-        return connection
+        try:
+            yield connection
+            connection.commit()
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
 
     def _initialize(self):
         with self._connect() as connection:
@@ -37,6 +46,14 @@ class ScreenshotStore:
                     content_type TEXT NOT NULL,
                     viewed INTEGER NOT NULL DEFAULT 0,
                     upload_key TEXT
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
                 )
                 """
             )
@@ -181,6 +198,24 @@ class ScreenshotStore:
                 """
             ).fetchone()
         return dict(row)
+
+    def get_setting(self, key, default=None):
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT value FROM settings WHERE key = ?",
+                (str(key),),
+            ).fetchone()
+        return row["value"] if row else default
+
+    def set_setting(self, key, value):
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO settings (key, value) VALUES (?, ?)
+                ON CONFLICT(key) DO UPDATE SET value = excluded.value
+                """,
+                (str(key), str(value)),
+            )
 
     def mark_viewed(self, screenshot_id):
         with self._connect() as connection:

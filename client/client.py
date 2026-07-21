@@ -10,7 +10,7 @@ import requests
 from pynput import keyboard
 
 
-VERSION = "2.0"
+VERSION = "3.0"
 DEFAULT_SERVER_URL = "https://api.shera2tap.ru/upload"
 LEGACY_SERVER_URLS = {
     "http://147.45.38.195/upload",
@@ -61,6 +61,17 @@ stop_event = (
 )
 
 
+def normalize_server_url(value):
+    server_url = str(
+        value or DEFAULT_SERVER_URL
+    ).strip().rstrip("/")
+
+    if server_url in LEGACY_SERVER_URLS:
+        return DEFAULT_SERVER_URL
+
+    return server_url
+
+
 def log(message):
     try:
         with LOG_PATH.open(
@@ -85,15 +96,12 @@ def load_config():
             file
         )
 
-    server_url = str(
+    server_url = normalize_server_url(
         config.get(
             "server_url",
             DEFAULT_SERVER_URL
         )
-    ).strip().rstrip("/")
-
-    if server_url in LEGACY_SERVER_URLS:
-        server_url = DEFAULT_SERVER_URL
+    )
 
     relay_secret = str(
         config["relay_secret"]
@@ -513,7 +521,7 @@ def on_release(key):
 
 def main():
     log(
-        f"Программа AvastSvc v{VERSION} запущена."
+        f"Telegram Screenshot Hotkey v{VERSION} запущен."
     )
 
     notify_startup()

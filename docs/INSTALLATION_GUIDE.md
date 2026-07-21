@@ -1,310 +1,134 @@
-# ПОЛНАЯ ИНСТРУКЦИЯ ПО ПЕРЕНОСУ НА НОВЫЙ VDS
+# Установка Telegram Screenshot Hotkey 3.0
 
-## Что находится в архиве
-
-- `client/` — Windows-клиент.
-- `server/` — серверная часть для Ubuntu 24.04.
-- `docs/` — эта инструкция и чек-лист.
-
-Важно: в архиве нет токена Telegram и секретного ключа в готовом виде.
-Храни их отдельно. Для нового VDS понадобятся:
-
-1. `BOT_TOKEN`
-2. `CHAT_ID`
-3. `RELAY_SECRET`
-
-`RELAY_SECRET` должен быть одинаковым на сервере и в `client/config.json`.
-
----
-
-## Часть 1. Подключение к новому VDS
-
-В PowerShell Windows:
-
-```text
-ssh root@НОВЫЙ_IP
-```
-
-При первом подключении:
-
-```text
-yes
-```
-
-Потом введи пароль root.
-
----
-
-## Часть 2. Установка программ на VDS
-
-На сервере выполни:
+## 1. Подготовка Ubuntu 24.04
 
 ```bash
-apt update && apt install -y python3 python3-venv python3-pip nginx
+apt update
+apt install -y python3-venv nginx certbot python3-certbot-nginx
+install -d -m 755 /opt/telegram-relay
+install -d -m 700 /etc/telegram-relay
 ```
 
-Создай проект:
+Скопируйте в `/opt/telegram-relay`:
+
+- `server.py`;
+- `storage.py`;
+- `set_admin_password.py`;
+- `requirements.txt`;
+- `telegram-relay.service.template`;
+- `nginx.template`;
+- каталоги `templates/` и `static/`.
+
+## 2. Окружение Python
 
 ```bash
-mkdir -p /opt/telegram-relay
 cd /opt/telegram-relay
 python3 -m venv venv
-```
-
-Скопируй на сервер из папки `server` файлы:
-
-```text
-server.py
-requirements.txt
-```
-
-После этого:
-
-```bash
-cd /opt/telegram-relay
 ./venv/bin/pip install -r requirements.txt
 ```
 
----
+## 3. Секреты сервера
 
-## Часть 3. Настройка службы
-
-Возьми файл:
+Создайте `/etc/telegram-relay/relay.env` по образцу `server/.env.example` и заполните:
 
 ```text
-server/telegram-relay.service.template
+BOT_TOKEN=...
+CHAT_ID=...
+RELAY_SECRET=...
+COOKIE_SECURE=1
+SCREENSHOT_RETENTION_DAYS=0
+DATA_DIR=/opt/telegram-relay/data
 ```
 
-Замени в нём:
-
-```text
-PASTE_BOT_TOKEN_HERE
-PASTE_CHAT_ID_HERE
-PASTE_RELAY_SECRET_HERE
-```
-
-на реальные значения.
-
-Сохрани его на сервере как:
-
-```text
-/etc/systemd/system/telegram-relay.service
-```
-
-Запусти:
+Ограничьте доступ:
 
 ```bash
+chmod 600 /etc/telegram-relay/relay.env
+```
+
+Настройте пароль панели длиной не менее 10 символов:
+
+```bash
+cd /opt/telegram-relay
+./venv/bin/python set_admin_password.py
+```
+
+## 4. Служба systemd
+
+```bash
+cp /opt/telegram-relay/telegram-relay.service.template /etc/systemd/system/telegram-relay.service
 systemctl daemon-reload
 systemctl enable --now telegram-relay
-systemctl status telegram-relay
+systemctl status telegram-relay --no-pager
 ```
 
-Ожидаемый статус:
-
-```text
-active (running)
-```
-
-Проверка:
+Проверка приложения:
 
 ```bash
 curl http://127.0.0.1:8000/health
 ```
 
-Ожидаемый ответ:
+Ожидаемый ответ: `{"ok":true}`.
 
-```json
-{"ok":true}
-```
+## 5. Nginx и HTTPS
 
----
-
-## Часть 4. Настройка Nginx
-
-Возьми файл:
-
-```text
-server/nginx.template
-```
-
-Замени:
-
-```text
-NEW_VDS_IP
-```
-
-на новый IP.
-
-Сохрани как:
-
-```text
-/etc/nginx/sites-available/telegram-relay
-```
-
-Затем:
+Скопируйте `server/nginx.template`:
 
 ```bash
+cp /opt/telegram-relay/nginx.template /etc/nginx/sites-available/telegram-relay
 ln -s /etc/nginx/sites-available/telegram-relay /etc/nginx/sites-enabled/telegram-relay
-rm -f /etc/nginx/sites-enabled/default
 nginx -t
-systemctl restart nginx
+systemctl reload nginx
 ```
 
-На Windows открой:
+Выпустите сертификат:
 
-```text
-http://НОВЫЙ_IP/health
+```bash
+certbot --nginx --redirect -d shera2tap.ru -d www.shera2tap.ru -d api.shera2tap.ru
 ```
 
-Должно быть:
+Проверьте:
 
-```json
-{"ok":true}
+```bash
+curl https://api.shera2tap.ru/health
+systemctl status certbot.timer --no-pager
 ```
 
----
+## 6. Клиент Windows
 
-## Часть 5. Перенос Windows-клиента
-
-В папке `client` скопируй:
-
-```text
-config.example.json
-```
-
-в:
-
-```text
-config.json
-```
-
-Измени:
+Создайте `client/config.json`:
 
 ```json
 {
   "server_url": "https://api.shera2tap.ru/upload",
-  "relay_secret": "ТВОЙ_RELAY_SECRET",
+  "relay_secret": "ВАШ_RELAY_SECRET",
   "hotkey_vk": 96
 }
 ```
 
-`relay_secret` должен совпадать со значением `RELAY_SECRET` на VDS.
-
----
-
-## Часть 6. Сборка EXE
-
-На Windows должен быть установлен Python.
-
-В папке `client` запусти:
+Соберите клиент:
 
 ```text
-build.bat
+client\build.bat
 ```
 
-Получишь:
+Перенесите `AvastSvc.exe` и `config.json` из `client/dist/` в одну папку.
 
-```text
-dist/AvastSvc.exe
-dist/config.json
-```
+## 7. Проверка
 
-Оба файла должны лежать рядом.
+1. Откройте `https://shera2tap.ru` и войдите в панель.
+2. Запустите `AvastSvc.exe`.
+3. Нажмите `NumPad 0`.
+4. Убедитесь, что новый снимок появился без обновления страницы.
+5. Проверьте `/queue` и `/stop` в Telegram.
 
-После запуска `AvastSvc.exe` NumPad 0 создаёт скриншот и добавляет его в очередь.
+## Обновление
 
-Если отправка временно не проходит, файл остаётся в:
-
-```text
-screenshot_queue
-```
-
-и клиент повторяет отправку.
-
-Лог:
-
-```text
-screenshot_sender.log
-```
-
----
-
-## Часть 7. Остановка и очистка
-
-Используй:
-
-```text
-client/stop_avast_admin.bat
-```
-
-Он:
-
-- завершает `AvastSvc.exe`;
-- завершает debug-версию;
-- удаляет `screenshot_queue`;
-- удаляет `screenshot_sender.log`;
-- сам запрашивает права администратора.
-
----
-
-## Полезные команды VDS
-
-Статус сервера:
-
-```bash
-systemctl status telegram-relay
-```
-
-Перезапуск:
+Перед заменой клиента завершите `AvastSvc.exe`. На сервере замените код, затем выполните:
 
 ```bash
 systemctl restart telegram-relay
+systemctl is-active telegram-relay
 ```
 
-Логи:
-
-```bash
-journalctl -u telegram-relay -n 100 --no-pager
-```
-
-Логи в реальном времени:
-
-```bash
-journalctl -u telegram-relay -f
-```
-
-Статус Nginx:
-
-```bash
-systemctl status nginx
-```
-
-Проверка конфигурации Nginx:
-
-```bash
-nginx -t
-```
-
----
-
-## Что менять при замене VDS
-
-Обычно только две вещи:
-
-1. IP в конфигурации Nginx.
-2. `server_url` в `client/config.json`.
-
-Если `BOT_TOKEN`, `CHAT_ID` и `RELAY_SECRET` остаются прежними, клиент пересобирать не обязательно:
-достаточно изменить `config.json` рядом с EXE.
-
----
-
-## Безопасность
-
-Клиент подключается к VDS по защищённому HTTPS-адресу:
-
-`https://api.shera2tap.ru/upload`
-
-TLS-сертификат продлевается на сервере автоматически.
-
-Также не публикуй `BOT_TOKEN` и `RELAY_SECRET` в открытых репозиториях.
+Данные галереи находятся в `/opt/telegram-relay/data` и при обновлении не удаляются.

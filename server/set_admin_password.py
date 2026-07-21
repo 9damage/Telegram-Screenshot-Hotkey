@@ -23,7 +23,7 @@ def main():
     values = {
         "ADMIN_PASSWORD_HASH": generate_password_hash(password),
         "FLASK_SECRET_KEY": secrets.token_hex(32),
-        "COOKIE_SECURE": "0",
+        "COOKIE_SECURE": "1",
         "SCREENSHOT_RETENTION_DAYS": "0",
         "DATA_DIR": "/opt/telegram-relay/data",
     }

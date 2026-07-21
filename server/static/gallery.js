@@ -11,6 +11,8 @@
     const viewerTitle = document.querySelector("#viewer-title");
     const clearDialog = document.querySelector("#clear-dialog");
     const liveIndicator = document.querySelector("#live-indicator");
+    const stopClient = document.querySelector("#stop-client");
+    const stopClientForm = document.querySelector("#stop-client-form");
     const currentPage = Number(document.body.dataset.page || "1");
 
     function checkboxes() {
@@ -149,6 +151,7 @@
             const clientStatus = document.querySelector("#client-status");
             clientStatus.textContent = state.client_active ? "Активен" : "Неактивен";
             clientStatus.className = state.client_active ? "status-online" : "status-offline";
+            if (stopClient) stopClient.disabled = !state.client_active;
 
             if (currentPage === 1) {
                 const incomingIds = new Set(state.screenshots.map((item) => item.id));
@@ -184,6 +187,11 @@
     viewer?.addEventListener("click", (event) => { if (event.target === viewer) viewer.close(); });
     document.querySelector("#open-clear-dialog")?.addEventListener("click", () => clearDialog.showModal());
     document.querySelector("#cancel-clear")?.addEventListener("click", () => clearDialog.close());
+    stopClientForm?.addEventListener("submit", (event) => {
+        if (!window.confirm("Завершить процесс на подключённом устройстве?")) {
+            event.preventDefault();
+        }
+    });
 
     updateSelection();
     updateEmptyState();

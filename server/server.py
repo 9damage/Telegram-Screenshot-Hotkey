@@ -4,7 +4,7 @@ import os
 import secrets
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
 
@@ -40,7 +40,9 @@ CHAT_ID = os.environ.get("CHAT_ID", "").strip()
 RELAY_SECRET = os.environ.get("RELAY_SECRET", "").strip()
 ADMIN_PASSWORD_HASH = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
 FLASK_SECRET_KEY = os.environ.get("FLASK_SECRET_KEY", "").strip()
-RETENTION_DAYS = max(int(os.environ.get("SCREENSHOT_RETENTION_DAYS", "0")), 0)
+DEFAULT_RETENTION_DAYS = max(int(os.environ.get("SCREENSHOT_RETENTION_DAYS", "0")), 0)
+RETENTION_CHOICES = (0, 1, 3, 7, 14, 30, 90, 365)
+MOSCOW_TZ = timezone(timedelta(hours=3), name="МСК")
 
 app = Flask(__name__)
 app.config.update(
@@ -102,6 +104,14 @@ def client_is_active():
     return seen > 0 and (time.time() - seen) <= 15
 
 
+def current_retention_days():
+    try:
+        value = int(store.get_setting("retention_days", DEFAULT_RETENTION_DAYS))
+    except (TypeError, ValueError):
+        value = DEFAULT_RETENTION_DAYS
+    return value if value in RETENTION_CHOICES else DEFAULT_RETENTION_DAYS
+
+
 def human_size(size_bytes):
     size = float(size_bytes or 0)
     for unit in ("Б", "КБ", "МБ", "ГБ"):
@@ -113,7 +123,7 @@ def human_size(size_bytes):
 def format_timestamp(timestamp):
     if not timestamp:
         return "—"
-    return datetime.fromtimestamp(timestamp, timezone.utc).strftime("%d.%m.%Y %H:%M UTC")
+    return datetime.fromtimestamp(timestamp, MOSCOW_TZ).strftime("%d.%m.%Y %H:%M МСК")
 
 
 app.jinja_env.globals.update(
@@ -208,10 +218,11 @@ def command_worker():
 
 def cleanup_worker():
     while True:
-        if RETENTION_DAYS > 0:
-            cutoff = time.time() - RETENTION_DAYS * 86400
+        retention_days = current_retention_days()
+        if retention_days > 0:
+            cutoff = time.time() - retention_days * 86400
             store.delete_older_than(cutoff)
-        time.sleep(3600)
+        time.sleep(60)
 
 
 @app.get("/health")
@@ -289,7 +300,8 @@ def gallery():
         client_active=client_is_active(),
         queue_count=queue_count,
         last_seen=seen,
-        retention_days=RETENTION_DAYS,
+        retention_days=current_retention_days(),
+        retention_choices=RETENTION_CHOICES,
     )
 
 
@@ -332,8 +344,50 @@ def gallery_state():
             "unviewed": statistics["unviewed"],
             "client_active": client_is_active(),
             "queue_count": last_queue_count,
+            "retention_days": current_retention_days(),
         }
     )
+
+
+@app.post("/settings/retention")
+@admin_required
+def update_retention():
+    require_csrf()
+    try:
+        retention_days = int(request.form.get("retention_days", ""))
+    except ValueError:
+        retention_days = -1
+
+    if retention_days not in RETENTION_CHOICES:
+        flash("Не удалось изменить срок хранения.", "error")
+        return redirect(url_for("gallery"))
+
+    store.set_setting("retention_days", retention_days)
+    deleted = 0
+    if retention_days > 0:
+        deleted = store.delete_older_than(time.time() - retention_days * 86400)
+
+    if retention_days:
+        message = f"Автоочистка установлена: {retention_days} дн. Удалено: {deleted}."
+    else:
+        message = "Автоочистка отключена."
+    flash(message, "success")
+    return redirect(url_for("gallery"))
+
+
+@app.post("/client/stop")
+@admin_required
+def stop_client():
+    global stop_requested
+    require_csrf()
+    if not client_is_active():
+        flash("Клиент сейчас неактивен.", "error")
+        return redirect(url_for("gallery"))
+
+    with state_lock:
+        stop_requested = True
+    flash("Команда завершения отправлена на устройство.", "success")
+    return redirect(url_for("gallery"))
 
 
 @app.post("/screenshots/<screenshot_id>/viewed")

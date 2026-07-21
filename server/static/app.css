@@ -128,7 +128,7 @@ h1 { margin: 0; font-size: clamp(38px, 6vw, 72px); letter-spacing: -.055em; line
     margin-bottom: 24px;
 }
 .stat-card { padding: 18px 20px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(17,23,34,.76); }
-.stat-card span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 13px; }
+.stat-card > span { display: block; margin-bottom: 10px; color: var(--muted); font-size: 16px; font-weight: 650; }
 .stat-card strong { font-size: 23px; letter-spacing: -.03em; }
 .stat-card small { display: block; margin-top: 4px; color: var(--accent); font-size: 12px; }
 .stat-values { display: flex; align-items: baseline; gap: 14px; }
@@ -136,6 +136,31 @@ h1 { margin: 0; font-size: clamp(38px, 6vw, 72px); letter-spacing: -.055em; line
 .stat-values .new-count span { display: inline; margin: 0; color: inherit; font-size: inherit; }
 .status-online { color: var(--success); }
 .status-offline { color: var(--muted); }
+
+.settings-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
+}
+.retention-form { display: flex; align-items: center; gap: 10px; }
+.retention-form label { margin: 0 4px; color: var(--muted); font-size: 14px; font-weight: 700; }
+.retention-form select {
+    min-height: 42px;
+    padding: 0 36px 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    color: var(--text);
+    background: var(--surface-2);
+    font: inherit;
+    cursor: pointer;
+}
+.retention-form select:focus-visible { outline: 3px solid rgba(54,169,255,.45); outline-offset: 2px; }
 
 .gallery-toolbar {
     display: flex;
@@ -191,6 +216,21 @@ dialog::backdrop { background: rgba(0,0,0,.82); backdrop-filter: blur(8px); }
 .viewer-dialog { width: min(96vw, 1500px); max-height: 94vh; padding: 0; border-radius: 20px; overflow: hidden; }
 .viewer-dialog img { display: block; max-width: 100%; max-height: calc(94vh - 58px); margin: auto; object-fit: contain; }
 .viewer-bar { display: flex; align-items: center; justify-content: space-between; min-height: 58px; padding: 8px 10px 8px 18px; border-bottom: 1px solid var(--line); color: var(--muted); }
+.viewer-close { display: grid; place-items: center; padding: 0; }
+.viewer-close > span { position: relative; display: block; width: 18px; height: 18px; }
+.viewer-close > span::before,
+.viewer-close > span::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 17px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+}
+.viewer-close > span::before { transform: translate(-50%, -50%) rotate(45deg); }
+.viewer-close > span::after { transform: translate(-50%, -50%) rotate(-45deg); }
 .confirm-dialog { width: min(92vw, 480px); padding: 26px; border-radius: 20px; }
 .confirm-dialog h2 { margin-top: 0; }
 .confirm-dialog label, .login-form label { display: block; margin: 20px 0 8px; font-size: 13px; font-weight: 700; }
@@ -219,12 +259,18 @@ dialog::backdrop { background: rgba(0,0,0,.82); backdrop-filter: blur(8px); }
     .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .live-indicator { display: none; }
+    .settings-bar { align-items: stretch; flex-direction: column; }
+    .retention-form { flex-wrap: wrap; }
+    #stop-client { width: 100%; }
 }
 @media (max-width: 480px) {
     .topbar { padding: 0 3vw; }
     .gallery-grid { grid-template-columns: 1fr; }
     .gallery-toolbar { align-items: stretch; flex-direction: column; padding: 13px; }
     .gallery-toolbar .button { width: 100%; }
+    .retention-form { align-items: stretch; flex-direction: column; }
+    .retention-form label { margin: 0; }
+    .retention-form .button { width: 100%; }
     .stat-card { padding: 15px; }
     .stat-card strong { font-size: 19px; }
     .login-card { padding: 26px; }

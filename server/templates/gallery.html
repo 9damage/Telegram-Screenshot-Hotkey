@@ -6,6 +6,7 @@
     <meta name="color-scheme" content="dark">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Скриншоты — Shera2Tap</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='eye-off-icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
     <script src="{{ url_for('static', filename='gallery.js') }}" defer></script>
 </head>
@@ -36,7 +37,7 @@
                 <p class="muted">Новые изображения появляются здесь автоматически.</p>
             </div>
             <button id="open-clear-dialog" class="button button-danger-outline" type="button" {% if not stats.count %}disabled{% endif %}>
-                Очистить всё
+                Очистить все
             </button>
         </section>
 
@@ -68,6 +69,28 @@
                 <span>В очереди</span>
                 <strong id="queue-count">{{ queue_count }}</strong>
             </article>
+        </section>
+
+        <section class="settings-bar" aria-label="Управление">
+            <form class="retention-form" method="post" action="{{ url_for('update_retention') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label for="retention-days">Автоочистка</label>
+                <select id="retention-days" name="retention_days">
+                    {% for days in retention_choices %}
+                        <option value="{{ days }}" {% if days == retention_days %}selected{% endif %}>
+                            {% if days == 0 %}Отключена{% elif days == 1 %}Через 1 день{% elif days in (3, 7) %}Через {{ days }} дня{% else %}Через {{ days }} дней{% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button class="button button-quiet" type="submit">Сохранить</button>
+            </form>
+
+            <form id="stop-client-form" method="post" action="{{ url_for('stop_client') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button id="stop-client" class="button button-danger-outline" type="submit" {% if not client_active %}disabled{% endif %}>
+                    Завершить процесс на устройстве
+                </button>
+            </form>
         </section>
 
         <form id="bulk-form" method="post" action="{{ url_for('delete_selected') }}">
@@ -137,7 +160,9 @@
     <dialog id="viewer-dialog" class="viewer-dialog">
         <div class="viewer-bar">
             <span id="viewer-title"></span>
-            <button id="close-viewer" class="icon-button" type="button" aria-label="Закрыть">×</button>
+            <button id="close-viewer" class="icon-button viewer-close" type="button" aria-label="Закрыть">
+                <span aria-hidden="true"></span>
+            </button>
         </div>
         <img id="viewer-image" alt="Просмотр скриншота">
     </dialog>
@@ -151,7 +176,7 @@
             <input id="confirmation" name="confirmation" autocomplete="off" required>
             <div class="dialog-actions">
                 <button id="cancel-clear" class="button button-quiet" type="button">Отмена</button>
-                <button class="button button-danger" type="submit">Удалить всё</button>
+                <button class="button button-danger" type="submit">Удалить все</button>
             </div>
         </form>
     </dialog>

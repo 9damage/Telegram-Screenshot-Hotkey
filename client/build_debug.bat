@@ -7,11 +7,13 @@ if not exist config.json (
     exit /b 1
 )
 
-py -m pip install -r requirements.txt
+python -m pip install -r requirements.txt
 
 set ICON_ARG=
 if exist icon.ico set ICON_ARG=--icon=icon.ico
+set VERSION_ARG=
+if exist version_info.txt set VERSION_ARG=--version-file=version_info.txt
 
-py -m PyInstaller --noconfirm --clean --onefile --console %ICON_ARG% --name AvastSvc_DEBUG client.py
+python -m PyInstaller --noconfirm --clean --onefile --console %ICON_ARG% %VERSION_ARG% --name AvastSvc_DEBUG client.py
 copy /Y config.json dist\config.json >nul
 pause

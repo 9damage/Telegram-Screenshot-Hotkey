@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -43,6 +44,11 @@ class ServerTestCase(unittest.TestCase):
         application.app.config.update(TESTING=True)
         self.client = application.app.test_client()
         application.store.clear()
+        application.store.set_setting("retention_days", 0)
+        with application.state_lock:
+            application.last_seen = 0.0
+            application.last_queue_count = 0
+            application.stop_requested = False
 
     def csrf_from(self, response):
         match = re.search(rb'name="csrf_token" value="([^"]+)"', response.data)
@@ -116,6 +122,33 @@ class ServerTestCase(unittest.TestCase):
         self.login()
         response = self.client.post("/screenshots/missing/delete")
         self.assertEqual(response.status_code, 400)
+
+    def test_timestamp_is_formatted_in_moscow_time(self):
+        self.assertEqual(
+            application.format_timestamp(1),
+            "01.01.1970 03:00 МСК",
+        )
+
+    def test_retention_setting_is_saved(self):
+        csrf = self.login()
+        response = self.client.post(
+            "/settings/retention",
+            data={"csrf_token": csrf, "retention_days": "7"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(application.current_retention_days(), 7)
+
+    def test_admin_can_request_client_stop(self):
+        csrf = self.login()
+        with application.state_lock:
+            application.last_seen = time.time()
+
+        response = self.client.post(
+            "/client/stop",
+            data={"csrf_token": csrf},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(application.stop_requested)
 
 
 if __name__ == "__main__":
