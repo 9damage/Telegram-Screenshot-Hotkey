@@ -16,7 +16,7 @@ client/config.json
 1. Разверни server.py и requirements.txt.
 2. Используй server/telegram-relay.service.
 3. Настрой nginx на новый IP.
-4. В client/config.json поменяй только server_url на новый IP.
+4. В client/config.json используй server_url: https://api.shera2tap.ru/upload.
 
 Остановка клиента:
 client/stop_avast_admin.bat

@@ -182,7 +182,7 @@ config.json
 
 ```json
 {
-  "server_url": "http://НОВЫЙ_IP/upload",
+  "server_url": "https://api.shera2tap.ru/upload",
   "relay_secret": "ТВОЙ_RELAY_SECRET",
   "hotkey_vk": 96
 }
@@ -301,13 +301,10 @@ nginx -t
 
 ## Безопасность
 
-Сейчас соединение клиента с VDS использует обычный HTTP.
-Это значит, что `RELAY_SECRET` передаётся без шифрования.
+Клиент подключается к VDS по защищённому HTTPS-адресу:
 
-Для нормальной постоянной эксплуатации лучше позже:
-- привязать домен к VDS;
-- выпустить TLS-сертификат;
-- включить HTTPS;
-- заменить `server_url` на `https://.../upload`.
+`https://api.shera2tap.ru/upload`
+
+TLS-сертификат продлевается на сервере автоматически.
 
 Также не публикуй `BOT_TOKEN` и `RELAY_SECRET` в открытых репозиториях.

@@ -11,6 +11,11 @@ from pynput import keyboard
 
 
 VERSION = "2.0"
+DEFAULT_SERVER_URL = "https://api.shera2tap.ru/upload"
+LEGACY_SERVER_URLS = {
+    "http://147.45.38.195/upload",
+    "https://147.45.38.195/upload",
+}
 
 
 def app_dir():
@@ -81,8 +86,14 @@ def load_config():
         )
 
     server_url = str(
-        config["server_url"]
-    ).strip()
+        config.get(
+            "server_url",
+            DEFAULT_SERVER_URL
+        )
+    ).strip().rstrip("/")
+
+    if server_url in LEGACY_SERVER_URLS:
+        server_url = DEFAULT_SERVER_URL
 
     relay_secret = str(
         config["relay_secret"]

@@ -9,11 +9,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
     <script src="{{ url_for('static', filename='gallery.js') }}" defer></script>
 </head>
-<body data-page="{{ page }}">
+<body class="gallery-page" data-page="{{ page }}">
     <header class="topbar">
         <a class="brand" href="{{ url_for('gallery') }}" aria-label="Shera2Tap — главная">
-            <span class="brand-mark brand-mark-small" aria-hidden="true">S</span>
-            <span>Shera2Tap</span>
+            <span class="brand-mark brand-mark-small brand-mark-logo" aria-hidden="true">
+                <img src="{{ url_for('static', filename='eye-off-icon.svg') }}" alt="">
+            </span>
+            <span>Telegram Screenshot Hotkey</span>
         </a>
         <div class="topbar-actions">
             <span id="live-indicator" class="live-indicator" title="Галерея обновляется автоматически">
@@ -47,8 +49,10 @@
         <section class="stats-grid" aria-label="Статистика">
             <article class="stat-card">
                 <span>Всего снимков</span>
-                <strong id="total-count">{{ stats.count }}</strong>
-                <small><span id="unviewed-count">{{ stats.unviewed }}</span> новых</small>
+                <div class="stat-values">
+                    <strong id="total-count">{{ stats.count }}</strong>
+                    <small class="new-count"><span id="unviewed-count">{{ stats.unviewed }}</span> новых</small>
+                </div>
             </article>
             <article class="stat-card">
                 <span>Занято места</span>

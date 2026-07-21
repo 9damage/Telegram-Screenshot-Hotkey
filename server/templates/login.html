@@ -9,9 +9,11 @@
 </head>
 <body class="login-page">
     <main class="login-card">
-        <div class="brand-mark" aria-hidden="true">S</div>
-        <p class="eyebrow">The best proctoring bypass</p>
-        <h1>Author: shera2tap</h1>
+        <div class="brand-mark brand-mark-eye" aria-hidden="true">
+            <img class="eye-symbol" src="{{ url_for('static', filename='eye-off-icon.svg') }}" alt="">
+        </div>
+        <h1>The best<br>proctoring bypass</h1>
+        <p class="login-author">Author — shera2tap</p>
         <p class="muted">Войдите, чтобы открыть доступ к скриншотам.</p>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
