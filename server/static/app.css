@@ -95,9 +95,11 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 
 .page-shell { width: min(1500px, 92vw); margin: 0 auto; padding: 56px 0 40px; }
 .hero-row { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 32px; }
-.eyebrow { margin: 0 0 8px; color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.hero-copy { display: flex; align-items: flex-start; flex-direction: column; }
+.eyebrow { margin: 0 0 12px; color: var(--accent); font-size: 12px; font-weight: 800; line-height: 1.2; letter-spacing: .14em; text-transform: uppercase; }
 h1 { margin: 0; font-size: clamp(38px, 6vw, 72px); letter-spacing: -.055em; line-height: .98; }
 .muted { color: var(--muted); line-height: 1.6; }
+.hero-copy .muted { max-width: 650px; margin: 18px 0 0; line-height: 1.5; }
 
 .button {
     display: inline-flex;
@@ -330,6 +332,7 @@ dialog::backdrop { background: rgba(0,0,0,.82); backdrop-filter: blur(8px); }
 @media (max-width: 760px) {
     .page-shell { width: min(94vw, 650px); padding-top: 36px; }
     .hero-row { align-items: flex-start; flex-direction: column; }
+    .hero-copy .muted { margin-top: 16px; }
     .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .live-indicator { display: none; }
