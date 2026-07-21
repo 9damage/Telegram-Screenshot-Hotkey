@@ -1,4 +1,4 @@
-# Установка Telegram Screenshot Hotkey 3.0
+# Установка Telegram Screenshot Hotkey 3.1
 
 ## 1. Подготовка Ubuntu 24.04
 

