@@ -8,6 +8,7 @@
     <title>Скриншоты — Shera2Tap</title>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='eye-off-icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+    <script src="{{ url_for('static', filename='notifications.js') }}" defer></script>
     <script src="{{ url_for('static', filename='gallery.js') }}" defer></script>
 </head>
 <body class="gallery-page" data-page="{{ page }}" data-client-event-id="{{ client_event_id }}"
@@ -42,12 +43,14 @@
             </button>
         </section>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% for category, message in messages %}
-                <div class="flash flash-{{ category }}" role="status">{{ message }}</div>
-            {% endfor %}
-        {% endwith %}
-        <div id="live-notifications" aria-live="polite" aria-atomic="true"></div>
+        <div class="toast-container" aria-live="polite" aria-atomic="true">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}" role="status">{{ message }}</div>
+                {% endfor %}
+            {% endwith %}
+            <div id="live-notifications"></div>
+        </div>
 
         <section class="stats-grid" aria-label="Статистика">
             <article class="stat-card">

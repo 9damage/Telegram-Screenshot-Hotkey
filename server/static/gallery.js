@@ -17,7 +17,6 @@
     const currentPage = Number(document.body.dataset.page || "1");
     const closeIconUrl = document.body.dataset.closeIconUrl || "/static/close-icon.svg";
     let lastClientEventId = Number(document.body.dataset.clientEventId || "0");
-    let notificationTimer = null;
 
     function newScreenshotsWord(count) {
         const value = Math.abs(Number(count) || 0);
@@ -38,11 +37,6 @@
         notification.setAttribute("role", "status");
         notification.textContent = message;
         liveNotifications.replaceChildren(notification);
-        window.clearTimeout(notificationTimer);
-        notificationTimer = window.setTimeout(() => {
-            notification.remove();
-            notificationTimer = null;
-        }, 10000);
     }
 
     function handleClientEvent(event) {
