@@ -54,7 +54,7 @@
                 <span>Всего снимков</span>
                 <div class="stat-values">
                     <strong id="total-count">{{ stats.count }}</strong>
-                    <small class="new-count"><span id="unviewed-count">{{ stats.unviewed }}</span> новых</small>
+                    <small class="new-count{% if stats.unviewed %} has-new{% endif %}">(<span id="unviewed-count">{{ stats.unviewed }}</span> <span id="unviewed-word">{{ new_screenshots_word(stats.unviewed) }}</span>)</small>
                 </div>
             </article>
             <article class="stat-card">

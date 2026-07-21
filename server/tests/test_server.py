@@ -134,6 +134,12 @@ class ServerTestCase(unittest.TestCase):
             "01.01.1970 03:00 МСК",
         )
 
+    def test_new_screenshot_word_is_declined(self):
+        for count in (0, 2, 5, 11, 12, 20, 111):
+            self.assertEqual(application.new_screenshots_word(count), "новых")
+        for count in (1, 21, 101):
+            self.assertEqual(application.new_screenshots_word(count), "новый")
+
     def test_retention_setting_is_saved(self):
         csrf = self.login()
         response = self.client.post(

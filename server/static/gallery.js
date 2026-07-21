@@ -19,6 +19,18 @@
     let lastClientEventId = Number(document.body.dataset.clientEventId || "0");
     let notificationTimer = null;
 
+    function newScreenshotsWord(count) {
+        const value = Math.abs(Number(count) || 0);
+        return value % 10 === 1 && value % 100 !== 11 ? "новый" : "новых";
+    }
+
+    function updateUnviewedCount(count) {
+        const value = Math.max(Number(count) || 0, 0);
+        document.querySelector("#unviewed-count").textContent = value;
+        document.querySelector("#unviewed-word").textContent = newScreenshotsWord(value);
+        document.querySelector(".new-count")?.classList.toggle("has-new", value > 0);
+    }
+
     function showNotification(message, category = "success") {
         if (!message || !liveNotifications) return;
         const notification = document.createElement("div");
@@ -73,7 +85,7 @@
                 card.classList.remove("is-unviewed");
                 card.querySelector(".new-badge")?.remove();
                 const counter = document.querySelector("#unviewed-count");
-                counter.textContent = Math.max(Number(counter.textContent || "0") - 1, 0);
+                updateUnviewedCount(Number(counter.textContent || "0") - 1);
             }
         }
     }
@@ -177,7 +189,7 @@
             document.querySelector("#total-count").textContent = state.total;
             document.querySelector("#storage-size").textContent = state.size_label;
             document.querySelector("#storage-capacity").textContent = state.screenshot_capacity_label;
-            document.querySelector("#unviewed-count").textContent = state.unviewed;
+            updateUnviewedCount(state.unviewed);
             document.querySelector("#queue-count").textContent = state.queue_count;
             const clientStatus = document.querySelector("#client-status");
             clientStatus.textContent = state.client_active ? "Активен" : "Неактивен";

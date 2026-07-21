@@ -140,7 +140,15 @@ h1 { margin: 0; font-size: clamp(38px, 6vw, 72px); letter-spacing: -.055em; line
     letter-spacing: -.03em;
 }
 .stat-values { display: flex; align-items: baseline; gap: 14px; }
-.stat-values .new-count { display: block; margin: 0; color: var(--accent); }
+.stat-values .new-count {
+    display: block;
+    margin: 0;
+    color: var(--muted);
+    font-size: 23px;
+    font-weight: 700;
+    letter-spacing: -.03em;
+}
+.stat-values .new-count.has-new { color: var(--accent); }
 .stat-values .new-count span { display: inline; margin: 0; color: inherit; font-size: inherit; }
 .status-online { color: var(--success); }
 .status-offline { color: var(--muted); }

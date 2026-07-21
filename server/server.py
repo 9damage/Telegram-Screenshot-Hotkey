@@ -125,6 +125,11 @@ def human_size(size_bytes):
         size /= 1024
 
 
+def new_screenshots_word(count):
+    value = abs(int(count or 0))
+    return "новый" if value % 10 == 1 and value % 100 != 11 else "новых"
+
+
 def free_disk_space():
     try:
         return shutil.disk_usage(DATA_DIR).free
@@ -141,6 +146,7 @@ def format_timestamp(timestamp):
 app.jinja_env.globals.update(
     csrf_token=csrf_token,
     human_size=human_size,
+    new_screenshots_word=new_screenshots_word,
     format_timestamp=format_timestamp,
 )
 
