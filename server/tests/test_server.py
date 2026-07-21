@@ -49,6 +49,10 @@ class ServerTestCase(unittest.TestCase):
             application.last_seen = 0.0
             application.last_queue_count = 0
             application.stop_requested = False
+            application.stop_pending = False
+            application.client_event_id = 0
+            application.client_event_kind = ""
+            application.client_event_message = ""
 
     def csrf_from(self, response):
         match = re.search(rb'name="csrf_token" value="([^"]+)"', response.data)
@@ -138,7 +142,8 @@ class ServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(application.current_retention_days(), 7)
 
-    def test_admin_can_request_client_stop(self):
+    @patch.object(application, "send_message", return_value=True)
+    def test_admin_sees_client_stop_confirmation(self, _send_message):
         csrf = self.login()
         with application.state_lock:
             application.last_seen = time.time()
@@ -146,9 +151,28 @@ class ServerTestCase(unittest.TestCase):
         response = self.client.post(
             "/client/stop",
             data={"csrf_token": csrf},
+            headers={"Accept": "application/json"},
         )
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue(application.stop_requested)
+        self.assertTrue(application.stop_pending)
+        request_event_id = response.get_json()["client_event_id"]
+
+        response = self.client.post(
+            "/stopped",
+            headers={"X-Relay-Secret": "test-relay-secret"},
+        )
+        self.assertEqual(response.status_code, 200)
+
+        state = self.client.get("/api/gallery-state").get_json()
+        self.assertFalse(state["client_active"])
+        self.assertFalse(state["stop_pending"])
+        self.assertGreater(state["client_event"]["id"], request_event_id)
+        self.assertEqual(state["client_event"]["kind"], "stopped")
+        self.assertEqual(
+            state["client_event"]["message"],
+            "Программа успешно завершила работу.",
+        )
 
 
 if __name__ == "__main__":

@@ -13,7 +13,25 @@
     const liveIndicator = document.querySelector("#live-indicator");
     const stopClient = document.querySelector("#stop-client");
     const stopClientForm = document.querySelector("#stop-client-form");
+    const liveNotifications = document.querySelector("#live-notifications");
     const currentPage = Number(document.body.dataset.page || "1");
+    let lastClientEventId = Number(document.body.dataset.clientEventId || "0");
+
+    function showNotification(message, category = "success") {
+        if (!message || !liveNotifications) return;
+        const notification = document.createElement("div");
+        notification.className = `flash flash-${category}`;
+        notification.setAttribute("role", "status");
+        notification.textContent = message;
+        liveNotifications.replaceChildren(notification);
+    }
+
+    function handleClientEvent(event) {
+        const eventId = Number(event?.id || 0);
+        if (eventId <= lastClientEventId) return;
+        lastClientEventId = eventId;
+        if (event.kind === "stopped") showNotification(event.message);
+    }
 
     function checkboxes() {
         return [...document.querySelectorAll(".screenshot-checkbox")];
@@ -151,7 +169,8 @@
             const clientStatus = document.querySelector("#client-status");
             clientStatus.textContent = state.client_active ? "Активен" : "Неактивен";
             clientStatus.className = state.client_active ? "status-online" : "status-offline";
-            if (stopClient) stopClient.disabled = !state.client_active;
+            if (stopClient) stopClient.disabled = !state.client_active || state.stop_pending;
+            handleClientEvent(state.client_event);
 
             if (currentPage === 1) {
                 const incomingIds = new Set(state.screenshots.map((item) => item.id));
@@ -187,9 +206,26 @@
     viewer?.addEventListener("click", (event) => { if (event.target === viewer) viewer.close(); });
     document.querySelector("#open-clear-dialog")?.addEventListener("click", () => clearDialog.showModal());
     document.querySelector("#cancel-clear")?.addEventListener("click", () => clearDialog.close());
-    stopClientForm?.addEventListener("submit", (event) => {
+    stopClientForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
         if (!window.confirm("Завершить процесс на подключённом устройстве?")) {
-            event.preventDefault();
+            return;
+        }
+
+        stopClient.disabled = true;
+        try {
+            const response = await fetch(stopClientForm.action, {
+                method: "POST",
+                headers: { "Accept": "application/json" },
+                body: new FormData(stopClientForm),
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || "Не удалось отправить команду.");
+            lastClientEventId = Math.max(lastClientEventId, Number(result.client_event_id || 0));
+            showNotification(result.message);
+        } catch (error) {
+            showNotification(error.message || "Не удалось отправить команду.", "error");
+            stopClient.disabled = false;
         }
     });
 

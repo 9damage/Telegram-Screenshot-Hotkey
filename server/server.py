@@ -61,6 +61,10 @@ login_lock = threading.Lock()
 last_seen = 0.0
 last_queue_count = 0
 stop_requested = False
+stop_pending = False
+client_event_id = 0
+client_event_kind = ""
+client_event_message = ""
 last_update_id = 0
 login_attempts = {}
 
@@ -169,6 +173,10 @@ def normalize_command(text):
 def command_worker():
     global last_update_id
     global stop_requested
+    global stop_pending
+    global client_event_id
+    global client_event_kind
+    global client_event_message
 
     while True:
         try:
@@ -209,6 +217,10 @@ def command_worker():
                     if client_is_active():
                         with state_lock:
                             stop_requested = True
+                            stop_pending = True
+                            client_event_id += 1
+                            client_event_kind = "stop_requested"
+                            client_event_message = "Команда завершения отправлена на устройство."
                         send_message("Команда остановки отправлена.")
                     else:
                         send_message("Программа неактивна.")
@@ -290,6 +302,7 @@ def gallery():
     with state_lock:
         queue_count = last_queue_count
         seen = last_seen
+        event_id = client_event_id
 
     return render_template(
         "gallery.html",
@@ -300,6 +313,7 @@ def gallery():
         client_active=client_is_active(),
         queue_count=queue_count,
         last_seen=seen,
+        client_event_id=event_id,
         retention_days=current_retention_days(),
         retention_choices=RETENTION_CHOICES,
     )
@@ -324,6 +338,15 @@ def screenshot_image(screenshot_id):
 def gallery_state():
     screenshots, total = store.list(page=1, per_page=24)
     statistics = store.stats()
+    active = client_is_active()
+    with state_lock:
+        queue_count = last_queue_count
+        pending = stop_pending
+        event = {
+            "id": client_event_id,
+            "kind": client_event_kind,
+            "message": client_event_message,
+        }
     return jsonify(
         {
             "screenshots": [
@@ -342,8 +365,10 @@ def gallery_state():
             "total": total,
             "size_label": human_size(statistics["size_bytes"]),
             "unviewed": statistics["unviewed"],
-            "client_active": client_is_active(),
-            "queue_count": last_queue_count,
+            "client_active": active,
+            "queue_count": queue_count,
+            "stop_pending": pending,
+            "client_event": event,
             "retention_days": current_retention_days(),
         }
     )
@@ -379,14 +404,28 @@ def update_retention():
 @admin_required
 def stop_client():
     global stop_requested
+    global stop_pending
+    global client_event_id
+    global client_event_kind
+    global client_event_message
     require_csrf()
     if not client_is_active():
+        if request.accept_mimetypes.best == "application/json":
+            return jsonify({"ok": False, "message": "Клиент сейчас неактивен."}), 409
         flash("Клиент сейчас неактивен.", "error")
         return redirect(url_for("gallery"))
 
     with state_lock:
         stop_requested = True
-    flash("Команда завершения отправлена на устройство.", "success")
+        stop_pending = True
+        client_event_id += 1
+        client_event_kind = "stop_requested"
+        client_event_message = "Команда завершения отправлена на устройство."
+        event_id = client_event_id
+    message = "Команда завершения отправлена на устройство."
+    if request.accept_mimetypes.best == "application/json":
+        return jsonify({"ok": True, "message": message, "client_event_id": event_id})
+    flash(message, "success")
     return redirect(url_for("gallery"))
 
 
@@ -437,6 +476,7 @@ def startup():
     global last_seen
     global last_queue_count
     global stop_requested
+    global stop_pending
     if not relay_authorized():
         return jsonify({"ok": False, "error": "unauthorized"}), 401
 
@@ -445,6 +485,7 @@ def startup():
         last_seen = time.time()
         last_queue_count = int(payload.get("queue_count", 0))
         stop_requested = False
+        stop_pending = False
     send_message("Запуск успешен.")
     return jsonify({"ok": True})
 
@@ -470,12 +511,20 @@ def heartbeat():
 def stopped():
     global last_seen
     global last_queue_count
+    global stop_pending
+    global client_event_id
+    global client_event_kind
+    global client_event_message
     if not relay_authorized():
         return jsonify({"ok": False, "error": "unauthorized"}), 401
 
     with state_lock:
         last_seen = 0.0
         last_queue_count = 0
+        stop_pending = False
+        client_event_id += 1
+        client_event_kind = "stopped"
+        client_event_message = "Программа успешно завершила работу."
     send_message("Программа успешно завершила работу.")
     return jsonify({"ok": True})
 

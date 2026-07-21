@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
     <script src="{{ url_for('static', filename='gallery.js') }}" defer></script>
 </head>
-<body class="gallery-page" data-page="{{ page }}">
+<body class="gallery-page" data-page="{{ page }}" data-client-event-id="{{ client_event_id }}">
     <header class="topbar">
         <a class="brand" href="{{ url_for('gallery') }}" aria-label="Shera2Tap — главная">
             <span class="brand-mark brand-mark-small brand-mark-logo" aria-hidden="true">
@@ -46,6 +46,7 @@
                 <div class="flash flash-{{ category }}" role="status">{{ message }}</div>
             {% endfor %}
         {% endwith %}
+        <div id="live-notifications" aria-live="polite" aria-atomic="true"></div>
 
         <section class="stats-grid" aria-label="Статистика">
             <article class="stat-card">
