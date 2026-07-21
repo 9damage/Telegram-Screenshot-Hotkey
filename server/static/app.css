@@ -139,7 +139,8 @@ h1 { margin: 0; font-size: clamp(38px, 6vw, 72px); letter-spacing: -.055em; line
     font-weight: 700;
     letter-spacing: -.03em;
 }
-.stat-values { display: flex; align-items: baseline; gap: 14px; }
+.stat-values { display: flex; align-items: baseline; column-gap: 12px; }
+.stat-values > * { white-space: nowrap; }
 .stat-values .new-count {
     display: block;
     margin: 0;
