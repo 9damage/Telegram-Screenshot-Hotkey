@@ -131,6 +131,7 @@ h1 { margin: 0; font-size: clamp(38px, 6vw, 72px); letter-spacing: -.055em; line
 .stat-card > span { display: block; margin-bottom: 10px; color: var(--muted); font-size: 16px; font-weight: 650; }
 .stat-card strong { font-size: 23px; letter-spacing: -.03em; }
 .stat-card small { display: block; margin-top: 4px; color: var(--accent); font-size: 12px; }
+.stat-values .storage-free { display: block; margin: 0; color: var(--muted); }
 .stat-values { display: flex; align-items: baseline; gap: 14px; }
 .stat-values .new-count { display: block; margin: 0; color: var(--accent); }
 .stat-values .new-count span { display: inline; margin: 0; color: inherit; font-size: inherit; }

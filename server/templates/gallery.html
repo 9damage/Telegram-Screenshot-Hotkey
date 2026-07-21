@@ -59,7 +59,10 @@
             </article>
             <article class="stat-card">
                 <span>Занято места</span>
-                <strong id="storage-size">{{ human_size(stats.size_bytes) }}</strong>
+                <div class="stat-values">
+                    <strong id="storage-size">{{ human_size(stats.size_bytes) }}</strong>
+                    <small class="storage-free">из <span id="disk-free">{{ disk_free_label }}</span></small>
+                </div>
             </article>
             <article class="stat-card">
                 <span>Клиент</span>

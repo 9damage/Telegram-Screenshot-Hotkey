@@ -176,6 +176,7 @@
 
             document.querySelector("#total-count").textContent = state.total;
             document.querySelector("#storage-size").textContent = state.size_label;
+            document.querySelector("#disk-free").textContent = state.disk_free_label;
             document.querySelector("#unviewed-count").textContent = state.unviewed;
             document.querySelector("#queue-count").textContent = state.queue_count;
             const clientStatus = document.querySelector("#client-status");

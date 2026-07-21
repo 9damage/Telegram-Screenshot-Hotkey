@@ -2,6 +2,7 @@ import hmac
 import math
 import os
 import secrets
+import shutil
 import threading
 import time
 from datetime import datetime, timedelta, timezone
@@ -122,6 +123,13 @@ def human_size(size_bytes):
         if size < 1024 or unit == "ГБ":
             return f"{size:.0f} {unit}" if unit == "Б" else f"{size:.1f} {unit}"
         size /= 1024
+
+
+def free_disk_space():
+    try:
+        return shutil.disk_usage(DATA_DIR).free
+    except OSError:
+        return 0
 
 
 def format_timestamp(timestamp):
@@ -314,6 +322,7 @@ def gallery():
         queue_count=queue_count,
         last_seen=seen,
         client_event_id=event_id,
+        disk_free_label=human_size(free_disk_space()),
         retention_days=current_retention_days(),
         retention_choices=RETENTION_CHOICES,
     )
@@ -364,6 +373,7 @@ def gallery_state():
             ],
             "total": total,
             "size_label": human_size(statistics["size_bytes"]),
+            "disk_free_label": human_size(free_disk_space()),
             "unviewed": statistics["unviewed"],
             "client_active": active,
             "queue_count": queue_count,
