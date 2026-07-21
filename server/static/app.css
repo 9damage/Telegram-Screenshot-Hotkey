@@ -286,6 +286,26 @@ dialog::backdrop { background: rgba(0,0,0,.82); backdrop-filter: blur(8px); }
 .confirm-dialog label, .login-form label { display: block; margin: 20px 0 8px; font-size: 13px; font-weight: 700; }
 .confirm-dialog input, .login-form input { width: 100%; min-height: 48px; padding: 0 13px; border: 1px solid var(--line); border-radius: 12px; color: var(--text); background: #080b10; }
 .dialog-actions { display: flex; justify-content: end; gap: 10px; margin-top: 20px; }
+.action-dialog[open] { animation: dialog-enter .2s ease-out both; }
+.action-dialog h2 { margin-bottom: 10px; font-size: 24px; line-height: 1.2; }
+.action-dialog p { margin: 0; line-height: 1.55; }
+.dialog-symbol {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    margin-bottom: 20px;
+    place-items: center;
+    border: 1px solid rgba(255,92,112,.45);
+    border-radius: 50%;
+    color: var(--danger);
+    background: rgba(255,92,112,.1);
+    font-size: 22px;
+    font-weight: 800;
+}
+@keyframes dialog-enter {
+    from { opacity: 0; transform: translateY(-10px) scale(.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 .login-page { display: grid; place-items: center; padding: 24px; }
 .login-card { width: min(100%, 420px); padding: 34px; border: 1px solid var(--line); border-radius: 24px; background: rgba(17,23,34,.9); box-shadow: 0 30px 100px rgba(0,0,0,.35); }

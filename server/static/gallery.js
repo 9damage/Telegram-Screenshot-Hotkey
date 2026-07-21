@@ -10,6 +10,10 @@
     const viewerImage = document.querySelector("#viewer-image");
     const viewerTitle = document.querySelector("#viewer-title");
     const clearDialog = document.querySelector("#clear-dialog");
+    const actionDialog = document.querySelector("#action-dialog");
+    const actionDialogTitle = document.querySelector("#action-dialog-title");
+    const actionDialogMessage = document.querySelector("#action-dialog-message");
+    const confirmAction = document.querySelector("#confirm-action");
     const liveIndicator = document.querySelector("#live-indicator");
     const stopClient = document.querySelector("#stop-client");
     const stopClientForm = document.querySelector("#stop-client-form");
@@ -17,6 +21,28 @@
     const currentPage = Number(document.body.dataset.page || "1");
     const closeIconUrl = document.body.dataset.closeIconUrl || "/static/close-icon.svg";
     let lastClientEventId = Number(document.body.dataset.clientEventId || "0");
+    let confirmationResolver = null;
+
+    function closeActionDialog(confirmed) {
+        const resolve = confirmationResolver;
+        confirmationResolver = null;
+        actionDialog?.close();
+        resolve?.(confirmed);
+    }
+
+    function askConfirmation({ title, message, confirmText }) {
+        if (!actionDialog || !actionDialogTitle || !actionDialogMessage || !confirmAction) {
+            return Promise.resolve(false);
+        }
+
+        if (confirmationResolver) closeActionDialog(false);
+        actionDialogTitle.textContent = title;
+        actionDialogMessage.textContent = message;
+        confirmAction.textContent = confirmText;
+        actionDialog.showModal();
+        window.requestAnimationFrame(() => confirmAction.focus());
+        return new Promise((resolve) => { confirmationResolver = resolve; });
+    }
 
     function newScreenshotsWord(count) {
         const value = Math.abs(Number(count) || 0);
@@ -85,7 +111,12 @@
     }
 
     async function deleteOne(button) {
-        if (!window.confirm("Удалить этот скриншот? Действие нельзя отменить.")) return;
+        const confirmed = await askConfirmation({
+            title: "Удалить скриншот?",
+            message: "Это действие нельзя отменить.",
+            confirmText: "Удалить",
+        });
+        if (!confirmed) return;
         button.disabled = true;
         const body = new URLSearchParams({ csrf_token: csrfToken });
         const response = await fetch(button.dataset.deleteUrl, {
@@ -95,7 +126,7 @@
         });
         if (!response.ok) {
             button.disabled = false;
-            window.alert("Не удалось удалить скриншот.");
+            showNotification("Не удалось удалить скриншот.", "error");
             return;
         }
         button.closest(".screenshot-card")?.remove();
@@ -217,19 +248,38 @@
         checkboxes().forEach((box) => { box.checked = selectAll.checked; });
         updateSelection();
     });
-    bulkForm?.addEventListener("submit", (event) => {
+    bulkForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
         const count = checkboxes().filter((box) => box.checked).length;
-        if (!count || !window.confirm(`Удалить выбранные скриншоты (${count})?`)) event.preventDefault();
+        if (!count) return;
+        const confirmed = await askConfirmation({
+            title: "Удалить выбранные скриншоты?",
+            message: `Выбрано: ${count}. Это действие нельзя отменить.`,
+            confirmText: "Удалить",
+        });
+        if (confirmed) bulkForm.submit();
     });
     document.querySelector("#close-viewer")?.addEventListener("click", () => viewer.close());
     viewer?.addEventListener("click", (event) => { if (event.target === viewer) viewer.close(); });
     document.querySelector("#open-clear-dialog")?.addEventListener("click", () => clearDialog.showModal());
     document.querySelector("#cancel-clear")?.addEventListener("click", () => clearDialog.close());
+    document.querySelector("#cancel-action")?.addEventListener("click", () => closeActionDialog(false));
+    confirmAction?.addEventListener("click", () => closeActionDialog(true));
+    actionDialog?.addEventListener("cancel", (event) => {
+        event.preventDefault();
+        closeActionDialog(false);
+    });
+    actionDialog?.addEventListener("click", (event) => {
+        if (event.target === actionDialog) closeActionDialog(false);
+    });
     stopClientForm?.addEventListener("submit", async (event) => {
         event.preventDefault();
-        if (!window.confirm("Завершить процесс на подключённом устройстве?")) {
-            return;
-        }
+        const confirmed = await askConfirmation({
+            title: "Завершить процесс?",
+            message: "Программа на подключённом устройстве будет остановлена.",
+            confirmText: "Завершить",
+        });
+        if (!confirmed) return;
 
         stopClient.disabled = true;
         try {
