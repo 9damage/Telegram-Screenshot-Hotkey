@@ -228,6 +228,49 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent);
 .pagination { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 28px; color: var(--muted); }
 .retention-note { margin: 26px 0 0; color: var(--muted); text-align: center; font-size: 13px; }
 
+.site-footer {
+    display: grid;
+    width: min(1500px, 92vw);
+    margin: 8px auto 0;
+    padding: 28px 0 38px;
+    border-top: 1px solid var(--line);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+.footer-link {
+    display: flex;
+    min-width: 0;
+    min-height: 76px;
+    padding: 14px 16px;
+    align-items: center;
+    gap: 13px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    color: var(--text);
+    background: rgba(17,23,34,.72);
+    text-decoration: none;
+    transition: border-color .2s ease, background .2s ease, transform .2s ease;
+}
+.footer-link:hover {
+    border-color: rgba(57,174,255,.55);
+    background: rgba(21,31,46,.9);
+    transform: translateY(-2px);
+}
+.footer-link-icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    place-items: center;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #55bdff, #1686dc);
+}
+.footer-link-icon-github { background: #202938; }
+.footer-link-icon img { display: block; width: 24px; height: 24px; }
+.footer-link-copy { display: grid; min-width: 0; gap: 3px; }
+.footer-link-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.footer-link-copy small { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+
 .flash { margin: 0 0 18px; padding: 13px 15px; border-radius: 12px; border: 1px solid var(--line); }
 .flash-error { border-color: rgba(255,92,112,.45); background: rgba(255,92,112,.1); }
 .flash-success { border-color: rgba(54,211,153,.4); background: rgba(54,211,153,.08); }
@@ -339,6 +382,7 @@ dialog::backdrop { background: rgba(0,0,0,.82); backdrop-filter: blur(8px); }
     .settings-bar { align-items: stretch; flex-direction: column; }
     .retention-form { flex-wrap: wrap; }
     #stop-client { width: 100%; }
+    .site-footer { width: min(94vw, 650px); grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) {
     .topbar { padding: 0 3vw; }

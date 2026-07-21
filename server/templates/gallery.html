@@ -167,6 +167,36 @@
         </p>
     </main>
 
+    <footer class="site-footer" aria-label="Полезные ссылки">
+        <a class="footer-link" href="https://t.me/+6VaoTUix5xozYmE6" target="_blank" rel="noopener noreferrer">
+            <span class="footer-link-icon" aria-hidden="true">
+                <img src="{{ url_for('static', filename='telegram-chat-icon.svg') }}" alt="">
+            </span>
+            <span class="footer-link-copy">
+                <strong>Чат со скриншотами</strong>
+                <small>Сообщения от бота</small>
+            </span>
+        </a>
+        <a class="footer-link" href="https://t.me/nine_damage" target="_blank" rel="noopener noreferrer">
+            <span class="footer-link-icon" aria-hidden="true">
+                <img src="{{ url_for('static', filename='telegram-user-icon.svg') }}" alt="">
+            </span>
+            <span class="footer-link-copy">
+                <strong>Написать автору</strong>
+                <small>@nine_damage</small>
+            </span>
+        </a>
+        <a class="footer-link" href="https://github.com/9damage" target="_blank" rel="noopener noreferrer">
+            <span class="footer-link-icon footer-link-icon-github" aria-hidden="true">
+                <img src="{{ url_for('static', filename='github-icon.svg') }}" alt="">
+            </span>
+            <span class="footer-link-copy">
+                <strong>GitHub</strong>
+                <small>Профиль 9damage</small>
+            </span>
+        </a>
+    </footer>
+
     <dialog id="viewer-dialog" class="viewer-dialog">
         <div class="viewer-bar">
             <span id="viewer-title"></span>
