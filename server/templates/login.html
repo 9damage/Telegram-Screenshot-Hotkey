@@ -30,7 +30,7 @@
         </div>
         <h1>The best<br>proctoring bypass</h1>
         <p class="login-author">Author — shera2tap</p>
-        <p class="muted">Войдите, чтобы открыть доступ к скриншотам.</p>
+        <p class="muted login-description">Войдите, чтобы открыть доступ к скриншотам.</p>
 
         <form method="post" class="login-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -40,6 +40,7 @@
                 Войти
             </button>
         </form>
+        <a class="login-help-link" href="{{ url_for('about') }}">Что это за сайт?</a>
     </main>
 </body>
 </html>

@@ -130,6 +130,13 @@ def new_screenshots_word(count):
     return "новый" if value % 10 == 1 and value % 100 != 11 else "новых"
 
 
+def add_display_numbers(screenshots, total, page=1, per_page=24):
+    first_number = max(int(total) - (max(int(page), 1) - 1) * int(per_page), 0)
+    for offset, screenshot in enumerate(screenshots):
+        screenshot["display_number"] = first_number - offset
+    return screenshots
+
+
 def free_disk_space():
     try:
         return shutil.disk_usage(DATA_DIR).free
@@ -256,6 +263,11 @@ def health():
     return jsonify({"ok": True})
 
 
+@app.get("/about")
+def about():
+    return render_template("about.html")
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if session.get("admin_authenticated"):
@@ -309,6 +321,7 @@ def gallery():
     page = max(request.args.get("page", 1, type=int), 1)
     per_page = 24
     screenshots, total = store.list(page=page, per_page=per_page)
+    add_display_numbers(screenshots, total, page=page, per_page=per_page)
     statistics = store.stats()
     pages = max(math.ceil(total / per_page), 1)
     if page > pages and total:
@@ -355,6 +368,7 @@ def screenshot_image(screenshot_id):
 @admin_required
 def gallery_state():
     screenshots, total = store.list(page=1, per_page=24)
+    add_display_numbers(screenshots, total)
     statistics = store.stats()
     active = client_is_active()
     with state_lock:
@@ -370,6 +384,7 @@ def gallery_state():
             "screenshots": [
                 {
                     "id": item["id"],
+                    "display_number": item["display_number"],
                     "created_at": item["created_at"],
                     "created_label": format_timestamp(item["created_at"]),
                     "size_label": human_size(item["size_bytes"]),

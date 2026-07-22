@@ -103,6 +103,7 @@ class ServerTestCase(unittest.TestCase):
         self.assertEqual(state["unviewed"], 1)
         self.assertTrue(state["screenshot_capacity_label"])
         self.assertFalse(state["screenshots"][0]["viewed"])
+        self.assertEqual(state["screenshots"][0]["display_number"], 1)
 
         viewed = self.client.post(
             f"/screenshots/{screenshot_id}/viewed",
@@ -128,6 +129,13 @@ class ServerTestCase(unittest.TestCase):
         response = self.client.post("/screenshots/missing/delete")
         self.assertEqual(response.status_code, 400)
 
+    def test_about_page_is_public(self):
+        response = self.client.get("/about")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Что это за сайт?", response.get_data(as_text=True))
+        self.assertIn("https://t.me/nine_damage", response.get_data(as_text=True))
+
     def test_timestamp_is_formatted_in_moscow_time(self):
         self.assertEqual(
             application.format_timestamp(1),
@@ -139,6 +147,16 @@ class ServerTestCase(unittest.TestCase):
             self.assertEqual(application.new_screenshots_word(count), "новых")
         for count in (1, 21, 101):
             self.assertEqual(application.new_screenshots_word(count), "новый")
+
+    def test_display_numbers_start_with_oldest_screenshot(self):
+        page_one = [{"id": str(index)} for index in range(24)]
+        page_two = [{"id": str(index)} for index in range(6)]
+
+        application.add_display_numbers(page_one, total=30, page=1, per_page=24)
+        application.add_display_numbers(page_two, total=30, page=2, per_page=24)
+
+        self.assertEqual([item["display_number"] for item in page_one], list(range(30, 6, -1)))
+        self.assertEqual([item["display_number"] for item in page_two], list(range(6, 0, -1)))
 
     def test_retention_setting_is_saved(self):
         csrf = self.login()

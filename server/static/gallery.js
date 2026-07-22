@@ -168,7 +168,7 @@
         imageButton.className = "image-button";
         imageButton.type = "button";
         imageButton.dataset.viewImage = item.image_url;
-        imageButton.dataset.viewTitle = item.created_label;
+        imageButton.dataset.viewTitle = `№${item.display_number} · ${item.created_label}`;
         imageButton.dataset.markViewedUrl = item.mark_viewed_url;
         const image = document.createElement("img");
         image.src = item.image_url;
@@ -179,11 +179,17 @@
         const meta = document.createElement("div");
         meta.className = "card-meta";
         const details = document.createElement("div");
+        const primary = document.createElement("div");
+        primary.className = "card-meta-primary";
+        const number = document.createElement("span");
+        number.className = "screenshot-number";
+        number.textContent = `№${item.display_number}`;
         const time = document.createElement("time");
         time.textContent = item.created_label;
         const size = document.createElement("span");
         size.textContent = item.size_label;
-        details.append(time, size);
+        primary.append(number, time);
+        details.append(primary, size);
         const remove = document.createElement("button");
         remove.className = "icon-button delete-one";
         remove.type = "button";
@@ -233,7 +239,11 @@
                 });
 
                 [...state.screenshots].reverse().forEach((item) => {
-                    if (!grid.querySelector(`[data-screenshot-id="${CSS.escape(item.id)}"]`)) {
+                    const existingCard = grid.querySelector(`[data-screenshot-id="${CSS.escape(item.id)}"]`);
+                    if (existingCard) {
+                        existingCard.querySelector(".screenshot-number").textContent = `№${item.display_number}`;
+                        existingCard.querySelector(".image-button").dataset.viewTitle = `№${item.display_number} · ${item.created_label}`;
+                    } else {
                         grid.prepend(createCard(item));
                     }
                 });

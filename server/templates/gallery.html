@@ -128,7 +128,7 @@
                         </label>
                         <button class="image-button" type="button"
                                 data-view-image="{{ url_for('screenshot_image', screenshot_id=screenshot.id) }}"
-                                data-view-title="{{ format_timestamp(screenshot.created_at) }}"
+                                data-view-title="№{{ screenshot.display_number }} · {{ format_timestamp(screenshot.created_at) }}"
                                 data-mark-viewed-url="{{ url_for('mark_screenshot_viewed', screenshot_id=screenshot.id) }}">
                             <img src="{{ url_for('screenshot_image', screenshot_id=screenshot.id) }}"
                                  alt="Скриншот от {{ format_timestamp(screenshot.created_at) }}"
@@ -136,7 +136,10 @@
                         </button>
                         <div class="card-meta">
                             <div>
-                                <time datetime="{{ screenshot.created_at }}">{{ format_timestamp(screenshot.created_at) }}</time>
+                                <div class="card-meta-primary">
+                                    <span class="screenshot-number">№{{ screenshot.display_number }}</span>
+                                    <time datetime="{{ screenshot.created_at }}">{{ format_timestamp(screenshot.created_at) }}</time>
+                                </div>
                                 <span>{{ human_size(screenshot.size_bytes) }}</span>
                             </div>
                             <button class="icon-button delete-one" type="button"

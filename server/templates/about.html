@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>О сервисе — Shera2Tap</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='eye-off-icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body class="about-page">
+    <header class="about-topbar">
+        <a class="brand" href="{{ url_for('login') }}" aria-label="Вернуться на страницу входа">
+            <span class="brand-mark brand-mark-small brand-mark-logo" aria-hidden="true">
+                <img src="{{ url_for('static', filename='eye-off-icon.svg') }}" alt="">
+            </span>
+            <span>Telegram Screenshot Hotkey</span>
+        </a>
+        <a class="button button-quiet" href="{{ url_for('login') }}">Войти</a>
+    </header>
+
+    <main class="about-shell">
+        <section class="about-hero">
+            <p class="eyebrow">Shera2Tap</p>
+            <h1>Что это за сайт?</h1>
+            <p class="about-lead">
+                Это закрытый сервис для обхода ограничений прокторинга: он помогает быстро передавать скриншоты с подключённого компьютера в защищённую галерею и Telegram.
+            </p>
+        </section>
+
+        <section class="about-card" aria-labelledby="how-it-works">
+            <p class="eyebrow">Коротко о главном</p>
+            <h2 id="how-it-works">Как это работает</h2>
+            <ol class="about-steps">
+                <li>
+                    <span class="about-step-number">1</span>
+                    <div>
+                        <strong>Запускается клиент</strong>
+                        <p>Небольшая программа работает на подключённом компьютере с Windows.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="about-step-number">2</span>
+                    <div>
+                        <strong>Создаётся скриншот</strong>
+                        <p>По горячей клавише программа делает снимок экрана и ставит его в очередь отправки.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="about-step-number">3</span>
+                    <div>
+                        <strong>Снимок появляется онлайн</strong>
+                        <p>Изображение передаётся по HTTPS в закрытую галерею и Telegram-чат.</p>
+                    </div>
+                </li>
+            </ol>
+        </section>
+
+        <section class="about-contact">
+            <div>
+                <p class="eyebrow">Связь с автором</p>
+                <h2>Нужен доступ или остались вопросы?</h2>
+                <p>Напишите напрямую в Telegram — отвечу и расскажу подробнее.</p>
+            </div>
+            <a class="button button-primary about-contact-button" href="https://t.me/nine_damage" target="_blank" rel="noopener noreferrer">
+                <img src="{{ url_for('static', filename='telegram-user-icon.png') }}" alt="" aria-hidden="true">
+                Написать в Telegram
+            </a>
+        </section>
+
+    </main>
+</body>
+</html>
