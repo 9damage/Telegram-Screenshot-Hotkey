@@ -27,7 +27,7 @@ if errorlevel 1 (
 copy /Y config.json dist\config.json >nul
 
 echo.
-echo Telegram Screenshot Hotkey v3.1 build complete.
+echo Telegram Screenshot Hotkey v3.2 build complete.
 echo dist\AvastSvc.exe
 echo dist\config.json
 pause

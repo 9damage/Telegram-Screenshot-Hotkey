@@ -1,4 +1,4 @@
-Telegram Screenshot Hotkey 3.1
+Telegram Screenshot Hotkey 3.2
 
 1. Переименуйте config.example.json в config.json.
 2. Вставьте актуальный relay_secret в config.json.

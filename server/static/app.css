@@ -172,11 +172,16 @@ h1 { margin: 0; font-size: clamp(38px, 6vw, 72px); letter-spacing: -.055em; line
 .retention-form label { margin: 0 4px; color: var(--muted); font-size: 14px; font-weight: 700; }
 .retention-form select {
     min-height: 42px;
-    padding: 0 36px 0 12px;
+    padding: 0 44px 0 12px;
     border: 1px solid var(--line);
     border-radius: 12px;
     color: var(--text);
-    background: var(--surface-2);
+    background-color: var(--surface-2);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%23dce6f3' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    appearance: none;
+    -webkit-appearance: none;
     font: inherit;
     cursor: pointer;
 }
@@ -334,6 +339,10 @@ dialog::backdrop { background: rgba(0,0,0,.82); backdrop-filter: blur(8px); }
 .viewer-dialog { width: min(96vw, 1500px); max-height: 94vh; padding: 0; border-radius: 20px; overflow: hidden; }
 .viewer-dialog img { display: block; max-width: 100%; max-height: calc(94vh - 58px); margin: auto; object-fit: contain; }
 .viewer-bar { display: flex; align-items: center; justify-content: space-between; min-height: 58px; padding: 8px 10px 8px 18px; border-bottom: 1px solid var(--line); color: var(--muted); }
+.viewer-bar #viewer-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.viewer-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; }
+.viewer-copy { display: inline-flex; min-height: 38px; padding: 0 12px; align-items: center; gap: 7px; }
+.viewer-copy svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .viewer-close { display: grid; place-items: center; padding: 0; }
 .confirm-dialog { width: min(92vw, 480px); padding: 26px; border-radius: 20px; }
 .confirm-dialog h2 { margin-top: 0; }
@@ -436,6 +445,11 @@ dialog::backdrop { background: rgba(0,0,0,.82); backdrop-filter: blur(8px); }
     .stat-card strong,
     .stat-values .new-count,
     .stat-values .storage-capacity { font-size: 19px; }
+    .storage-stat .stat-values { min-width: 0; column-gap: 6px; }
+    .storage-stat #storage-size,
+    .storage-stat .storage-capacity { min-width: 0; font-size: clamp(12px, 3.8vw, 16px); }
+    .viewer-copy span { display: none; }
+    .viewer-copy { width: 38px; padding: 0; justify-content: center; }
     .login-card { padding: 26px; }
     .login-card h1 { font-size: clamp(26px, 8vw, 36px); }
     .about-topbar { min-height: 66px; }

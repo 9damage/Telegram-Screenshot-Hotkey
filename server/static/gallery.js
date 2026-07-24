@@ -9,6 +9,7 @@
     const viewer = document.querySelector("#viewer-dialog");
     const viewerImage = document.querySelector("#viewer-image");
     const viewerTitle = document.querySelector("#viewer-title");
+    const copyViewerImage = document.querySelector("#copy-viewer-image");
     const clearDialog = document.querySelector("#clear-dialog");
     const actionDialog = document.querySelector("#action-dialog");
     const actionDialogTitle = document.querySelector("#action-dialog-title");
@@ -108,6 +109,52 @@
                 const counter = document.querySelector("#unviewed-count");
                 updateUnviewedCount(Number(counter.textContent || "0") - 1);
             }
+        }
+    }
+
+    async function convertToPng(blob) {
+        if (blob.type === "image/png") return blob;
+        const bitmap = await createImageBitmap(blob);
+        const canvas = document.createElement("canvas");
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        const context = canvas.getContext("2d");
+        if (!context) {
+            bitmap.close();
+            throw new Error("canvas_unavailable");
+        }
+        context.drawImage(bitmap, 0, 0);
+        bitmap.close();
+        return new Promise((resolve, reject) => {
+            canvas.toBlob((pngBlob) => {
+                if (pngBlob) resolve(pngBlob);
+                else reject(new Error("image_conversion_failed"));
+            }, "image/png");
+        });
+    }
+
+    async function copyCurrentScreenshot() {
+        if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
+            showNotification("Браузер не поддерживает копирование изображений.", "error");
+            return;
+        }
+
+        copyViewerImage.disabled = true;
+        try {
+            const response = await fetch(viewerImage.src, {
+                credentials: "same-origin",
+                cache: "no-store",
+            });
+            if (!response.ok) throw new Error("image_fetch_failed");
+            const imageBlob = await convertToPng(await response.blob());
+            await navigator.clipboard.write([
+                new ClipboardItem({ "image/png": imageBlob }),
+            ]);
+            showNotification("Скриншот скопирован.");
+        } catch (_error) {
+            showNotification("Не удалось скопировать скриншот.", "error");
+        } finally {
+            copyViewerImage.disabled = false;
         }
     }
 
@@ -274,6 +321,7 @@
         if (confirmed) bulkForm.submit();
     });
     document.querySelector("#close-viewer")?.addEventListener("click", () => viewer.close());
+    copyViewerImage?.addEventListener("click", copyCurrentScreenshot);
     viewer?.addEventListener("click", (event) => { if (event.target === viewer) viewer.close(); });
     document.querySelector("#open-clear-dialog")?.addEventListener("click", () => clearDialog.showModal());
     document.querySelector("#cancel-clear")?.addEventListener("click", () => clearDialog.close());

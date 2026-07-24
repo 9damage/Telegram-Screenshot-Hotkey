@@ -34,7 +34,7 @@
     <main class="page-shell">
         <section class="hero-row">
             <div class="hero-copy">
-                <p class="eyebrow">Защищённое хранилище</p>
+                <p class="eyebrow">Защищенное хранилище</p>
                 <h1>Скриншоты</h1>
                 <p class="muted">Новые изображения появляются здесь автоматически.</p>
             </div>
@@ -60,7 +60,7 @@
                     <small class="new-count{% if stats.unviewed %} has-new{% endif %}">(<span id="unviewed-count">{{ stats.unviewed }}</span> <span id="unviewed-word">{{ new_screenshots_word(stats.unviewed) }}</span>)</small>
                 </div>
             </article>
-            <article class="stat-card">
+            <article class="stat-card storage-stat">
                 <span>Занято места</span>
                 <div class="stat-values">
                     <strong id="storage-size">{{ human_size(stats.size_bytes) }}</strong>
@@ -203,9 +203,19 @@
     <dialog id="viewer-dialog" class="viewer-dialog">
         <div class="viewer-bar">
             <span id="viewer-title"></span>
-            <button id="close-viewer" class="icon-button viewer-close" type="button" aria-label="Закрыть">
-                <img class="close-icon" src="{{ url_for('static', filename='close-icon.svg') }}" alt="" aria-hidden="true">
-            </button>
+            <div class="viewer-actions">
+                <button id="copy-viewer-image" class="button button-quiet viewer-copy" type="button"
+                        aria-label="Копировать скриншот" title="Копировать скриншот">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="8" y="8" width="11" height="11" rx="2"></rect>
+                        <path d="M16 8V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h1"></path>
+                    </svg>
+                    <span>Копировать</span>
+                </button>
+                <button id="close-viewer" class="icon-button viewer-close" type="button" aria-label="Закрыть">
+                    <img class="close-icon" src="{{ url_for('static', filename='close-icon.svg') }}" alt="" aria-hidden="true">
+                </button>
+            </div>
         </div>
         <img id="viewer-image" alt="Просмотр скриншота">
     </dialog>
